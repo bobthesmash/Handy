@@ -1,0 +1,3 @@
+# Compose screens use PascalCase @Composable functions.
+[*.{kt,kts}]
+ktlint_standard_function-naming = disabled

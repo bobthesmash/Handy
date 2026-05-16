@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ear_notification_channel_name">Handy mikrofon</string>
+    <string name="ear_notification_idle_title">Handy — klidový režim</string>
+    <string name="ear_notification_idle_text">Naslouchání wake-wordu.</string>
+    <string name="ear_notification_listening_title">Handy — naslouchám</string>
+    <string name="ear_notification_listening_text">Zachytávám řeč…</string>
+    <string name="ear_notification_processing_title">Handy — zpracovávám</string>
+    <string name="ear_notification_processing_text">Rozpoznávání a příkazy…</string>
+    <string name="ear_notification_stop">Zastavit</string>
+</resources>

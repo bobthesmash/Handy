@@ -1,0 +1,25 @@
+# Android / Gradle
+.gradle/
+gradle-tmp-dist/
+**/build/
+.idea/
+*.iml
+*.hprof
+*.log
+.cxx/
+local.properties
+
+# Kotlin
+.kotlin/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Keystores (never commit)
+*.jks
+*.keystore
+
+# Detekt reports (generated)
+**/detekt-reports/
+

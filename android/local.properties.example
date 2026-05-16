@@ -1,0 +1,14 @@
+## local.properties template
+
+Android Studio obvykle tento soubor vytvoří automaticky při prvním otevření projektu.
+Pokud ne, zkopírujte níže do souboru `android/local.properties` vedle `settings.gradle.kts`.
+
+**Windows:**
+
+```properties
+sdk.dir=C\:\\Users\\YOUR_USERNAME\\AppData\\Local\\Android\\Sdk
+```
+
+Změňte cestu na svůj Android SDK (`Settings → Appearance & Behavior → Android SDK → Android SDK Location`).
+
+**Git:** `local.properties` je v `.gitignore` — necommitujte ho.

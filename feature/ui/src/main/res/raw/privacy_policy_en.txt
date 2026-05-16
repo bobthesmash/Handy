@@ -1,0 +1,50 @@
+Privacy Policy — Handy
+
+Effective: 2026-05-17
+Version: 1.2
+
+CONTACT / OPERATOR
+Handy keeps sensitive processing on your device. We do not operate our own cloud service to store your raw voice, transcripts, or voice embeddings. Use the developer contact published with the app (e.g. on Google Play).
+
+SUMMARY
+• Voice and audio are not sent off the phone for core recognition — it runs locally (offline models).
+• The voice embedding is stored in encrypted storage on the device (Android EncryptedSharedPreferences).
+• Telemetry is off by default. If you enable it under Settings → Diagnostics, only a local NDJSON file is written under the app sandbox (filesDir; no upload to us). That file does not include audio or beta feedback message text — if beta feedback is saved while telemetry is on, only the star rating is recorded there.
+• Profile backup is your choice — an encrypted file you save where you choose.
+• The application version line in the UI can be copied via long press to the device clipboard — only when you initiate it; the app does not send that text over the network by itself.
+
+DATA ON THE DEVICE
+Microphone audio — wake word, commands, enrollment, confirmations (RAM / short-lived buffers).
+Voice embedding — speaker verification (encrypted prefs).
+Contacts and numbers (if allowed) — calls and SMS per command (memory, system APIs).
+Contact aliases — Room database on device.
+ASR transcript — in-memory processing.
+Notifications (if allowed) — per Android rules.
+Optional local telemetry — debugging: event types and metrics (e.g. completed intents, latency, low-confidence ASR, false wakes; beta feedback saves record stars only); no audio or feedback message text in this file (NDJSON under app storage).
+App version line (shown in UI) — on-screen display; optional copy to system clipboard on long press (no automatic outbound transmission by Handy from this gesture).
+
+NETWORK (INTERNET)
+The app may declare INTERNET. Picovoice Porcupine may need licence or validation traffic (to Picovoice, not “upload voice to us”). The assistant core is intended to be offline.
+
+ANDROID PERMISSIONS
+RECORD_AUDIO — listening and commands.
+POST_NOTIFICATIONS / foreground service — background listening with a notification.
+BLUETOOTH_CONNECT — headsets.
+CALL_PHONE, READ_CONTACTS, SEND_SMS — calls and messages (optional).
+CAMERA — torch (optional).
+RECEIVE_BOOT_COMPLETED — restart after reboot.
+Notification listener is enabled in Android system settings — the app explains why.
+
+CHILDREN
+Not directed at children under 13.
+
+INTERNATIONAL
+We do not receive the above as our cloud service. Third parties (e.g. licences) have their own terms.
+
+CHANGES
+We publish updates with a new effective date.
+
+YOUR RIGHTS (GDPR — brief)
+Most processing is local — use Android (clear data, revoke permissions, uninstall). For third parties, see their docs.
+
+This text is informational, not legal advice. Have it reviewed before store publication.

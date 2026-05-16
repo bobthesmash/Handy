@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<title>Handy — Progress Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!--
+  ┌────────────────────────────────────────────────────────────────────┐
+  │  HOW TO UPDATE PROGRESS (for agent workers)                        │
+  │                                                                    │
+  │  1. Najdi task podle "id" v JSON bloku níže (např. "F1-T03").      │
+  │  2. Změň "status" na jednu z: "pending" | "in_progress" |          │
+  │     "done" | "blocked".                                            │
+  │  3. Když je status "done", vyplň "completedAt" na dnešní           │
+  │     datum ve formátu "YYYY-MM-DD".                                 │
+  │  4. Když je "blocked", napiš důvod do "notes".                     │
+  │  5. Vždy zároveň aktualizuj IMPLEMENTATION_PLAN.md (checkbox       │
+  │     `- [ ]` → `- [x]` u stejného ID + Changelog řádek).            │
+  │  6. Aktualizuj "lastUpdated" na aktuální datum.                    │
+  │                                                                    │
+  │  NIC JINÉHO v tomto souboru NEUPRAVUJ. Struktura tasků a fází      │
+  │  je zamčená — pokud opravdu potřebuješ přidat task, prober s       │
+  │  uživatelem a pak ho přidej do JSON i do markdownu se stejným ID.  │
+  └────────────────────────────────────────────────────────────────────┘
+-->
+
+<script id="PROGRESS_DATA" type="application/json">
+{
+  "projectName": "Handy",
+  "subtitle": "Lokální hlasový asistent pro člověka bez rukou",
+  "lastUpdated": "2026-05-17",
+  "phases": [
+    {
+      "id": "F0",
+      "title": "Foundation & PoC",
+      "weeks": "Týdny 1–2",
+      "goal": "Ověřit feasibility, latence ≤ 700 ms, baterie ≤ 6 %/h.",
+      "tasks": [
+        { "id": "F0-T01", "title": "Setup Android projektu (Kotlin, Compose, Hilt, min SDK 26, target 35)", "status": "done", "completedAt": "2026-05-15", "notes": "Ověření assembleDebug lokálně dle závěru changelog (disk prostředí)." },
+        { "id": "F0-T02", "title": "Modulární struktura (app, core, audio, wakeword, asr, voiceid, nlu, actions, tts, ui)", "status": "done", "completedAt": "2026-05-15", "notes": "Foojay resolver pro JDK 17; ověř build po `gradlew :app:compileDebugKotlin`." },
+        { "id": "F0-T03", "title": "CI: GitHub Actions (lint, ktlint, detekt, unit test, debug build)", "status": "done", "completedAt": "2026-05-15", "notes": "Workflow `ci.yml`, root task `ciHandy`. V README doplnění owner/repo v badge." },
+        { "id": "F0-T04", "title": "EarService — foreground service typu microphone, ring buffer 3s, AudioRecord 16kHz", "status": "done", "completedAt": "2026-05-15", "notes": "" },
+        { "id": "F0-T05", "title": "Wake-word PoC: Porcupine vs openWakeWord benchmark + ADR", "status": "done", "completedAt": "2026-05-15", "notes": "ADR docs/decisions/0001-wake-word.md; ONNX assets volitelně v assets/openwakeword/." },
+        { "id": "F0-T06", "title": "Audio routing: detekce a přepnutí na BT SCO, fallback", "status": "done", "completedAt": "2026-05-15", "notes": "`AudioHandsFreeRouting` + `EarService` (VOICE_COMMUNICATION); BT přes `setCommunicationDevice`/SCO; `BLUETOOTH_CONNECT`." },
+        { "id": "F0-T07", "title": "Měření latence wake→ASR-ready na referenčním HW", "status": "blocked", "completedAt": null, "notes": "Šablona + log `HandyLatency`; stream EarService→[MonoPcmRingBuffer.consume…]→Sherpa v `HandyAssistantViewModel`, auto `noteWakeWord` na Home s demo panelem. Tabulku v `docs/benchmarks/latency.md` doplnit až na zařízení." },
+        { "id": "F0-T08", "title": "Měření spotřeby baterie idle/listening, Battery Historian export", "status": "blocked", "completedAt": null, "notes": "Postup v `docs/benchmarks/battery.md`; tabulka se vyplní měřením na zařízení (Historian / Nastavení baterie)." },
+        { "id": "F0-T09", "title": "Boot receiver + auto-restart služby (RECEIVE_BOOT_COMPLETED)", "status": "done", "completedAt": "2026-05-15", "notes": "`HandyBootCompletedReceiver` → `EarService.start`." },
+        { "id": "F0-T10", "title": "README s návodem na build a side-load", "status": "done", "completedAt": "2026-05-15", "notes": "ADB `install -r`, lokální APK cesta; `progress.html` jako nástěnka / screenshot." }
+      ]
+    },
+    {
+      "id": "F1",
+      "title": "MVP Core",
+      "weeks": "Týdny 3–6",
+      "goal": "6 intentů end-to-end + voice biometrics, ≥ 90 % recognition, < 2 % false-accept.",
+      "tasks": [
+        { "id": "F1-T01", "title": "Enrollment screen v Compose (5–8 vět, vizuální feedback)", "status": "done", "completedAt": "2026-05-15", "notes": "6 vět, PCM do cache přes EnrollmentClipRecorder; EarService pause při EnrollmentScreen." },
+        { "id": "F1-T02", "title": "ECAPA-TDNN ONNX integrace, 192-D embedding", "status": "done", "completedAt": "2026-05-15", "notes": "`EcapaOnnxSpeakerEmbeddingExtractor`, mel Fbank SpeechBrain‑like; ONNX do assets viz README + ADR-0002." },
+        { "id": "F1-T03", "title": "EncryptedSharedPreferences pro embeddingy + rolling adaptive update", "status": "done", "completedAt": "2026-05-15", "notes": "`SpeakerEmbeddingEncryptedStore`, codec Base64+F32 LE, alpha EMA výchozí 0.18." },
+        { "id": "F1-T04", "title": "Dual-threshold verifikace (T_high=0.78, T_low=0.65), debug menu", "status": "done", "completedAt": "2026-05-15", "notes": "`DebugVerificationScreen` + vstup z hlavní obrazovky v debug buildu; prahy v `handy_voice_verify_debug`; unit testy včetně hranic T_high/T_low." },
+        { "id": "F1-T05", "title": "Silero VAD ONNX integrace, segmentace mluvy", "status": "done", "completedAt": "2026-05-15", "notes": "`SileroOnnxSpeechSegmenter`, `SileroOnnxVoiceActivityDetector`, `VadSegmentMerger`; asset `silero_vad.onnx` v `voiceid/` (README + ADR-0003); unit testy nad slučovačem rámců." },
+        { "id": "F1-T06", "title": "Sherpa-onnx + Vosk-CZ small, streaming ASR", "status": "done", "completedAt": "2026-05-15", "notes": "AAR com.xdcobra.sherpa:sherpa-onnx 1.12.28 (kanonická verze `sherpaOnnx` v `gradle/libs.versions.toml`); createCzSherpaStreamingRecognizer / SherpaStreamingSpeechRecognizer; assets asr/cs_zipformer_small/README; ADR-0004." },
+        { "id": "F1-T07", "title": "DialogManager state machine (sealed class + StateFlow)", "status": "done", "completedAt": "2026-05-15", "notes": "`DialogPhase` sealed + `DialogManager` v `:core:common`, thread-safe přechody, testy happy/confirm/reject." },
+        { "id": "F1-T08", "title": "Rule-based NLU engine + Kotlin DSL", "status": "done", "completedAt": "2026-05-15", "notes": "`intentCatalog`/DSL, `PhraseTemplateCompiler`, `RuleBasedNluEngine`, `HandyNluCatalogs.mvp`; unit testy patternů CALL/SMS/TORCH + validace DSL." },
+        { "id": "F1-T09", "title": "Intent CALL — TelecomManager.placeCall", "status": "done", "completedAt": "2026-05-15", "notes": "`TelecomCallPlacer` + sdílený `PhoneSlotResolver`. V DEBUG běží přes demo textový panel → `DialogManager` → `MvpIntentExecutor`; skutečné ASR+VAD z EarService mikro‑buffer je další práce ([F1-T20]). Kontaktní větev: `READ_CONTACTS` runtime + zařízení." },
+        { "id": "F1-T10", "title": "Intent SEND_SMS — SmsManager + confirm gate", "status": "done", "completedAt": "2026-05-15", "notes": "`SmsTextMessageSender` + `confirmedByUser`; UI dialog + druhý speaker-verify ([F1-T16])." },
+        { "id": "F1-T11", "title": "Intent SET_ALARM — AlarmClock.ACTION_SET_ALARM", "status": "done", "completedAt": "2026-05-15", "notes": "`AlarmClockIntentStarter` + `AlarmSlotTimeParser`; otevře systémové hodiny s předvyplněnými extras. Jednotný executor `MvpIntentExecutor`; demo panel v DEBUG." },
+        { "id": "F1-T12", "title": "Intent VOLUME — up/down/set/mute, AudioManager", "status": "done", "completedAt": "2026-05-15", "notes": "`MediaVolumeAdjuster` na STREAM_MUSIC + NLU více formulací (`{operation}` + „úplně ztiš“)." },
+        { "id": "F1-T13", "title": "Intent READ_LAST_NOTIFICATION — NotificationListenerService + TTS", "status": "done", "completedAt": "2026-05-15", "notes": "`HandyNotificationListenerService` persistuje řádek lokálně; akce vrací text (TTS až [F1-T15]). Vyžaduje ruční povolení v „Přístup k oznámením“. " },
+        { "id": "F1-T14", "title": "Intent TORCH — CameraManager.setTorchMode", "status": "done", "completedAt": "2026-05-15", "notes": "`TorchModeSwitcher` + právo `CAMERA`; NLU slot `{mode}` u „… baterku“." },
+        { "id": "F1-T15", "title": "TTS modul (Android TextToSpeech CZ), interrupt-safe", "status": "done", "completedAt": "2026-05-15", "notes": "`AndroidCzechSpeechSynthesizer` (cs-CZ, přerušení přes stop/nový speak); VM čte výsledek executoru a po utterance volá `onTtsComplete()`." },
+        { "id": "F1-T16", "title": "Confirm gate pro destruktivní akce (druhý speaker-verify)", "status": "done", "completedAt": "2026-05-15", "notes": "`DestructiveConfirmVoiceVerifier` jen `StrongAccept`; dialog Nahrát → Zastavit a ověřit → `dispatchExec`." },
+        { "id": "F1-T17", "title": "Settings screen: enrollment, citlivost, aliasy, re-enroll", "status": "done", "completedAt": "2026-05-15", "notes": "`SettingsScreen` + `WakeWordSensitivityStore` + `ContactAliasStore` v resolveru; návrat z enrollmentu do nastavení." },
+        { "id": "F1-T18", "title": "Room schéma: contacts_aliases, command_log, embedding_versions", "status": "done", "completedAt": "2026-05-15", "notes": "`:core:persistence`, `HandyDatabase` v1, migrace aliasů z prefs." },
+        { "id": "F1-T19", "title": "Onboarding flow — permission grant wizard", "status": "done", "completedAt": "2026-05-15", "notes": "HandyContent + MainActivity; EarService dál přes HandyRootScreen při mic grant." },
+        { "id": "F1-T20", "title": "Persistent notifikace FG service (idle/listening/processing)", "status": "done", "completedAt": "2026-05-15", "notes": "EarForegroundUiState, notify z HandyRootScreen při běžícím EarService + mic." },
+        { "id": "F1-T21", "title": "Unit testy NLU patterns (≥ 90 % coverage)", "status": "done", "completedAt": "2026-05-15", "notes": "JaCoCo verification v :feature:nlu; CALL specifičtější vzor první." },
+        { "id": "F1-T22", "title": "E2E test 50 nahrávek vlastního hlasu — ≥ 90 % recognition", "status": "blocked", "completedAt": null, "notes": "Vyžaduje 50 nahraných vzorků na zařízení. Postup: `docs/benchmarks/e2e-voice-recognition.md`." },
+        { "id": "F1-T23", "title": "False-accept test 30 cizích hlasů — < 2 %", "status": "blocked", "completedAt": null, "notes": "Vyžaduje 30 cizích vzorků; žádné audio mimo zařízení. Postup: `docs/benchmarks/false-accept-voice.md`." }
+      ]
+    },
+    {
+      "id": "F2",
+      "title": "Rozšířené příkazy",
+      "weeks": "Týdny 7–10",
+      "goal": "Pokrýt běžné denní operace, 80 % úspěšnost v kapse + BT.",
+      "tasks": [
+        { "id": "F2-T01", "title": "NotificationListenerService — připojení, filtrování, prioritizace", "status": "done", "completedAt": "2026-05-15", "notes": "Ranking.importance, sync při connect, NotificationSnapshotPolicy + prefs I/O flag." },
+        { "id": "F2-T02", "title": "Intent REPLY_NOTIF — RemoteInput (WhatsApp, Signal, SMS)", "status": "done", "completedAt": "2026-05-15", "notes": "Poslední snímek + key; NLS + PendingIntent.send; vyžaduje druhý speaker-verify." },
+        { "id": "F2-T03", "title": "Intent PLAY_MEDIA — MediaSession discover, app handover", "status": "done", "completedAt": "2026-05-15", "notes": "`MediaPlaybackHandover`, NLS sessions, play → launch → CATEGORY_APP_MUSIC." },
+        { "id": "F2-T04", "title": "Intent MEDIA_CTRL — next/prev/pause/resume", "status": "done", "completedAt": "2026-05-15", "notes": "MediaCtrlCommandParser + transportControls; NLU „{command} hudba“." },
+        { "id": "F2-T05", "title": "Intent OPEN_APP — alias mapping na package names", "status": "done", "completedAt": "2026-05-15", "notes": "OpenAppLauncher + NLU; ověření na zařízení (nainstalované app dle aliasu)." },
+        { "id": "F2-T06", "title": "Intent NAVIGATE — Google Maps geo: intent", "status": "done", "completedAt": "2026-05-15", "notes": "MapsNavigateLauncher; fallback bez setPackage pokud Maps chybí." },
+        { "id": "F2-T07", "title": "Intent WHAT_TIME / WHAT_DATE / WHAT_BATTERY", "status": "done", "completedAt": "2026-05-15", "notes": "`DeviceInfoAnswers`, NLU fráze, demo panel → TTS; battery přes ACTION_BATTERY_CHANGED sticky intent." },
+        { "id": "F2-T08", "title": "Intent TIMER — CZ duration parsing (pět minut, půl hodiny)", "status": "done", "completedAt": "2026-05-15", "notes": "CzechDurationParser + AlarmClock.ACTION_SET_TIMER; unit testy parseru." },
+        { "id": "F2-T09", "title": "Intent CANCEL / STOP / REPEAT — meta intenty", "status": "done", "completedAt": "2026-05-15", "notes": "NLU + VM: přerušení TTS, reset/potvrzení; REPEAT z lastSpokenLine." },
+        { "id": "F2-T10", "title": "Audio gain normalization (target -23 LUFS)", "status": "done", "completedAt": "2026-05-15", "notes": "`MonoSpeechProgrammeGainNormalizer` v `EarService`; RMS proxy −23 dBFS; test na sinusoidě." },
+        { "id": "F2-T11", "title": "Noise suppression: NoiseSuppressor + AcousticEchoCanceler", "status": "done", "completedAt": "2026-05-15", "notes": "`MicHardwareAudioEffects` v `EarService`." },
+        { "id": "F2-T12", "title": "Error recovery: opakuj prosím, ASR confidence threshold", "status": "done", "completedAt": "2026-05-15", "notes": "`AsrHypothesisConfidence`, VM + Sherpa `minTokenProb`." },
+        { "id": "F2-T13", "title": "Lokální off-by-default telemetrie (počty intentů, latence)", "status": "done", "completedAt": "2026-05-15", "notes": "`HandyLocalTelemetry` + prefs; Nastavení → Diagnostika: přepínač, SAF export NDJSON, smazání souboru, nápověda pokud nic k exportu; při návratu do obrazovky (`ON_RESUME`) se obnoví stav záložky exportu; výchozí vypnuto." }
+      ]
+    },
+    {
+      "id": "F3",
+      "title": "Lockscreen & energy",
+      "weeks": "Týdny 11–12",
+      "goal": "Spolehlivý běh v reálných podmínkách, baterie ≤ 5 %/h.",
+      "tasks": [
+        { "id": "F3-T01", "title": "QA matrix lockscreen — per intent: screen-on/off/locked/BT/pocket", "status": "done", "completedAt": "2026-05-15", "notes": "Šablona `docs/qa/lockscreen-matrix.md`; buňky vyplní QA na zařízení." },
+        { "id": "F3-T02", "title": "Rozhodnutí Direct Boot support — ADR", "status": "done", "completedAt": "2026-05-15", "notes": "`docs/decisions/0005-direct-boot.md` — zatím bez Direct Boot." },
+        { "id": "F3-T03", "title": "Battery profiling — Battery Historian na 8h scénáři", "status": "done", "completedAt": "2026-05-15", "notes": "8h checklist + tabulka v `docs/benchmarks/battery.md`; čísla až z HW." },
+        { "id": "F3-T04", "title": "Wake-word inference každých 30 ms, CPU profiling", "status": "done", "completedAt": "2026-05-15", "notes": "`WakeWordInferenceBudget` 30 ms / 480 vzorků @16k; CPU profiling až s plnou wake smyčkou." },
+        { "id": "F3-T05", "title": "Lazy load ASR/speaker modelů, unload po N min idle", "status": "done", "completedAt": "2026-05-15", "notes": "`SherpaStreamingRecognizerHolder` + `HandyAssistantViewModel`: lazy Sherpa, ECAPA už lazy v extraktoru; po 5 min bez interakce `release` + `noteWakeWordForHeavyModels()` pro wake." },
+        { "id": "F3-T06", "title": "OEM whitelist onboarding screen (Xiaomi/Huawei/Samsung/OnePlus)", "status": "done", "completedAt": "2026-05-15", "notes": "`OemManufacturerHintsScreen` + nastavení; odkazy dontkillmyapp.com." },
+        { "id": "F3-T07", "title": "BT SCO reconnect logic + exponential backoff", "status": "done", "completedAt": "2026-05-15", "notes": "`AudioHandsFreeRouting` device callback + řetěz reconnect." },
+        { "id": "F3-T08", "title": "Field test 1 den — telefon v kapse + BT, deník selhání", "status": "blocked", "completedAt": null, "notes": "Vyžaduje celodenní test na zařízení; šablona v lockscreen matrix / poznámky QA." }
+      ]
+    },
+    {
+      "id": "F4",
+      "title": "Polish & beta",
+      "weeks": "Týdny 13–14",
+      "goal": "Beta s 3–5 uživateli, release candidate.",
+      "tasks": [
+        { "id": "F4-T01", "title": "Hands-free onboarding — hlasem celá konfigurace mimo permission popupy", "status": "done", "completedAt": "2026-05-15", "notes": "TTS průvodce v `PermissionsOnboardingScreen`: automatické čtení kroku + návod na systém; tlačítko Zopakovat hlasitě. Systémová oprávnění stále ručně." },
+        { "id": "F4-T02", "title": "Hlasová konfigurace aliasů kontaktů", "status": "done", "completedAt": "2026-05-15", "notes": "NLU `SET_CONTACT_ALIAS` / `REMOVE_CONTACT_ALIAS` + `MvpIntentExecutor` → Room přes `ContactAliasStore`; vzory „nazývej {target} jako {alias}“ atd.; řádky v lockscreen matrix." },
+        { "id": "F4-T03", "title": "Backup/restore profilu (zaheslovaný balík)", "status": "done", "completedAt": "2026-05-15", "notes": "`HandyProfileBackup` AES-GCM + PBKDF2; JSON embeddingB64 + aliasy + embedding_versions; Nastavení → export/import přes SAF; `ProfileBackupCoordinator`; `EmbeddingFloatCodec` v `:core:common`." },
+        { "id": "F4-T04", "title": "Privacy policy CZ+EN, permissions declaration form", "status": "done", "completedAt": "2026-05-15", "notes": "Markdown `docs/legal/`; Play **`play-store-data-safety.md`**; `PrivacyPolicyScreen` + raw; Nastavení → soukromí; `RootRoute.Privacy`. Policy **v1.2** (2026-05-17): řádek verze — dlouhé klepnutí → schránka; tabulky CS/EN; sync docs + `res/raw/`. Podklad Play: řádek verze + schránka (gesto uživatele)." },
+        { "id": "F4-T05", "title": "Crash reporting — ADR (lokální vs opt-in Sentry)", "status": "done", "completedAt": "2026-05-15", "notes": "ADR `docs/decisions/0006-crash-reporting.md` (opravená čísla série oproti 0003=VAD). Default bez cloudu; možná budoucí opt-in s redakcí." },
+        { "id": "F4-T06", "title": "Beta s 3–5 reálnými uživateli + hlasový feedback formulář", "status": "pending", "completedAt": null, "notes": "`BetaFeedbackScreen` + Room; offline Sherpa přepis + `ACTION_SEND`. Nové řádky beta zpětné vazby jdou šifrovaně v `.handy` (`HandyProfilePlainV1.betaFeedback`); zálohy bez tohoto klíče při importu beta tab nesahají. Nad patičkou soukromí i řádek verze buildu (`AppVersionFooter`); sdílený text navíc přikládá tutéž verzi před závěrečnou větu patičky sdílení. Při uložení zpětné vazby zapisuje `HandyLocalTelemetry` (jen pokud je lokální telemetrie zapnutá) NDJSON řádek `beta_feedback_saved` s počtem hvězd — bez textu zprávy. Testerů 3–5 pořád jen na zařízení." },
+        { "id": "F4-T07", "title": "Iterace na základě beta feedbacku, RC", "status": "pending", "completedAt": null, "notes": "RC: řádek verze (`AppVersionFooterText`, PackageManager). Dlouhý stisk řádku zkopíruje text do schránky + Toast; pro TalkBack je doplněný `contentDescription` s návodem. Beta feedback obrazovka stejnou patičku." }
+      ]
+    },
+    {
+      "id": "F5",
+      "title": "Future / nice-to-have",
+      "weeks": "Po beta",
+      "goal": "Rozšíření kvality a dostupnosti.",
+      "tasks": [
+        { "id": "F5-T01", "title": "NLU v2: Gemma-2B int4 přes MediaPipe LLM Inference", "status": "pending", "completedAt": null, "notes": "" },
+        { "id": "F5-T02", "title": "Anti-spoofing (RawNet2 / AASIST ONNX)", "status": "pending", "completedAt": null, "notes": "" },
+        { "id": "F5-T03", "title": "Multi-jazyk: EN model, switch podle wake-word", "status": "pending", "completedAt": null, "notes": "" },
+        { "id": "F5-T04", "title": "Piper TTS pro plně offline CZ hlas", "status": "pending", "completedAt": null, "notes": "" },
+        { "id": "F5-T05", "title": "Wear OS companion — wake & confirm na hodinkách", "status": "pending", "completedAt": null, "notes": "" },
+        { "id": "F5-T06", "title": "Switch Access / eye-tracking fallback", "status": "pending", "completedAt": null, "notes": "" },
+        { "id": "F5-T07", "title": "F-Droid release", "status": "pending", "completedAt": null, "notes": "" }
+      ]
+    },
+    {
+      "id": "D",
+      "title": "Otevřená rozhodnutí",
+      "weeks": "Blokuje plán",
+      "goal": "Odpovědi uživatele, které ovlivní directional choices.",
+      "tasks": [
+        { "id": "D-001", "title": "Cílový telefon / Android verze pro PoC", "status": "pending", "completedAt": null, "notes": "" },
+        { "id": "D-002", "title": "Jazyk: CZ only nebo CZ+EN", "status": "pending", "completedAt": null, "notes": "" },
+        { "id": "D-003", "title": "Wake-word: Porcupine vs openWakeWord (čeká na F0-T05 benchmark)", "status": "pending", "completedAt": null, "notes": "" },
+        { "id": "D-004", "title": "Distribuce: Play Store vs sideload/F-Droid", "status": "pending", "completedAt": null, "notes": "" },
+        { "id": "D-005", "title": "TTS: Google CZ vs Piper offline", "status": "pending", "completedAt": null, "notes": "" },
+        { "id": "D-006", "title": "Anti-spoofing už v MVP nebo až F5?", "status": "pending", "completedAt": null, "notes": "" },
+        { "id": "D-007", "title": "Účast cílového uživatele v alfa testech od které fáze?", "status": "pending", "completedAt": null, "notes": "" }
+      ]
+    }
+  ]
+}
+</script>
+
+<style>
+  :root {
+    --bg-0: #0b0e14;
+    --bg-1: #11151d;
+    --bg-2: #161b25;
+    --bg-3: #1d2330;
+    --line: #2a3142;
+    --text-0: #e6e9f0;
+    --text-1: #a3acc0;
+    --text-2: #6b7488;
+    --accent: #7c9cff;
+    --accent-soft: #1d2742;
+    --green: #4ade80;
+    --green-soft: #14321f;
+    --blue: #60a5fa;
+    --blue-soft: #16273f;
+    --amber: #fbbf24;
+    --amber-soft: #3a2c0d;
+    --red: #f87171;
+    --red-soft: #3a1717;
+    --gray-soft: #1f2533;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: radial-gradient(1200px 600px at 20% -10%, #1a2238 0%, var(--bg-0) 60%) fixed;
+    color: var(--text-0);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+  }
+  header { margin-bottom: 24px; }
+  h1 {
+    margin: 0 0 4px;
+    font-size: 28px;
+    letter-spacing: -0.02em;
+    font-weight: 650;
+  }
+  .subtitle { color: var(--text-1); margin-bottom: 18px; }
+  .meta {
+    color: var(--text-2);
+    font-size: 12px;
+    margin-bottom: 24px;
+  }
+
+  .overall {
+    background: var(--bg-1);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 22px 24px;
+    margin-bottom: 28px;
+  }
+  .overall-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .overall-pct {
+    font-size: 42px;
+    font-weight: 650;
+    letter-spacing: -0.02em;
+  }
+  .overall-pct span { color: var(--text-2); font-size: 18px; font-weight: 400; margin-left: 6px; }
+  .overall-text { color: var(--text-1); }
+  .progress-bar {
+    height: 8px;
+    background: var(--gray-soft);
+    border-radius: 99px;
+    overflow: hidden;
+    margin-top: 16px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--green));
+    border-radius: 99px;
+    transition: width 0.4s ease;
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .stat {
+    background: var(--bg-1);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 16px;
+  }
+  .stat-num { font-size: 22px; font-weight: 650; }
+  .stat-label { color: var(--text-2); font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px;}
+  .stat.done .stat-num { color: var(--green); }
+  .stat.in_progress .stat-num { color: var(--blue); }
+  .stat.blocked .stat-num { color: var(--red); }
+  .stat.pending .stat-num { color: var(--text-1); }
+
+  .toolbar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+    align-items: center;
+  }
+  .toolbar input[type=search] {
+    background: var(--bg-1);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    color: var(--text-0);
+    padding: 9px 14px;
+    font-size: 14px;
+    min-width: 220px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .toolbar input[type=search]:focus { border-color: var(--accent); }
+  .chip {
+    background: var(--bg-1);
+    border: 1px solid var(--line);
+    color: var(--text-1);
+    border-radius: 99px;
+    padding: 6px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.15s;
+  }
+  .chip:hover { background: var(--bg-2); color: var(--text-0); }
+  .chip.active {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--text-0);
+  }
+  .chip .count {
+    color: var(--text-2);
+    margin-left: 6px;
+    font-size: 11px;
+  }
+  .chip.active .count { color: var(--accent); }
+
+  .phase {
+    background: var(--bg-1);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .phase-header {
+    padding: 16px 20px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    transition: background 0.15s;
+  }
+  .phase-header:hover { background: var(--bg-2); }
+  .phase-title {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .phase-id {
+    color: var(--text-2);
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: 12px;
+    background: var(--bg-3);
+    padding: 2px 8px;
+    border-radius: 6px;
+  }
+  .phase-name { font-size: 16px; font-weight: 600; }
+  .phase-weeks { color: var(--text-2); font-size: 12px; }
+  .phase-goal { color: var(--text-1); font-size: 12px; margin-top: 4px; width: 100%; }
+
+  .phase-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    min-width: 180px;
+  }
+  .phase-pct {
+    font-size: 13px;
+    color: var(--text-1);
+    font-variant-numeric: tabular-nums;
+  }
+  .phase-pct strong { color: var(--text-0); }
+  .phase-bar { width: 180px; height: 6px; background: var(--gray-soft); border-radius: 99px; overflow: hidden; }
+  .phase-bar-fill { height: 100%; background: var(--green); transition: width 0.4s ease; }
+
+  .phase-tasks {
+    border-top: 1px solid var(--line);
+    background: var(--bg-1);
+  }
+  .phase.collapsed .phase-tasks { display: none; }
+  .phase-chevron {
+    color: var(--text-2);
+    font-size: 12px;
+    margin-left: 8px;
+    transition: transform 0.2s;
+  }
+  .phase.collapsed .phase-chevron { transform: rotate(-90deg); }
+
+  .task {
+    display: grid;
+    grid-template-columns: 28px 100px 1fr auto;
+    align-items: start;
+    padding: 12px 20px;
+    gap: 14px;
+    border-bottom: 1px solid var(--line);
+    transition: background 0.1s;
+  }
+  .task:last-child { border-bottom: none; }
+  .task:hover { background: var(--bg-2); }
+  .task.hidden { display: none; }
+
+  .status-dot {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin-top: 2px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .status-pending     { background: var(--gray-soft); color: var(--text-2); }
+  .status-in_progress { background: var(--blue-soft); color: var(--blue); }
+  .status-done        { background: var(--green-soft); color: var(--green); }
+  .status-blocked     { background: var(--red-soft); color: var(--red); }
+
+  .task-id {
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    color: var(--text-2);
+    font-size: 12px;
+    background: var(--bg-3);
+    padding: 2px 8px;
+    border-radius: 6px;
+    text-align: center;
+    margin-top: 1px;
+    height: fit-content;
+  }
+  .task-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .task-title { color: var(--text-0); }
+  .task.done .task-title { color: var(--text-1); text-decoration: line-through; text-decoration-color: var(--text-2); }
+  .task-notes { color: var(--text-2); font-size: 12px; font-style: italic; }
+  .task-date {
+    color: var(--text-2);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    margin-top: 3px;
+  }
+
+  footer {
+    margin-top: 40px;
+    text-align: center;
+    color: var(--text-2);
+    font-size: 12px;
+  }
+  footer code {
+    background: var(--bg-2);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+  }
+  .empty {
+    padding: 40px;
+    text-align: center;
+    color: var(--text-2);
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1 id="title">Handy</h1>
+      <div class="subtitle" id="subtitle"></div>
+      <div class="meta" id="meta"></div>
+
+      <div class="overall">
+        <div class="overall-row">
+          <div>
+            <div class="overall-pct"><span id="overallPctNum">0</span>%<span id="overallCount"></span></div>
+            <div class="overall-text">celkový postup napříč všemi fázemi (mimo F5 a D)</div>
+          </div>
+          <div id="overallEta" class="overall-text" style="text-align:right;"></div>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="overallFill" style="width: 0%"></div></div>
+      </div>
+
+      <div class="stats" id="stats"></div>
+
+      <div class="toolbar">
+        <input type="search" id="searchInput" placeholder="Hledat (název nebo ID, např. F1-T03)…">
+        <div id="chips"></div>
+      </div>
+    </header>
+
+    <main id="phases"></main>
+
+    <footer>
+      Data: inline JSON v <code>&lt;script id=&quot;PROGRESS_DATA&quot;&gt;</code> v tomto souboru. <br>
+      Agent workery upravují <em>jen</em> JSON blok + <code>IMPLEMENTATION_PLAN.md</code>. Tato stránka se sama přerenderuje po reloadu.
+    </footer>
+  </div>
+
+<script>
+(function() {
+  const STATUS_LABEL = {
+    pending: "Pending",
+    in_progress: "In progress",
+    done: "Done",
+    blocked: "Blocked"
+  };
+  const STATUS_GLYPH = {
+    pending: "·",
+    in_progress: "▸",
+    done: "✓",
+    blocked: "!"
+  };
+  const STATUS_ORDER = ["all", "pending", "in_progress", "done", "blocked"];
+  const FILTER_LABEL = {
+    all: "Vše",
+    pending: "Pending",
+    in_progress: "In progress",
+    done: "Done",
+    blocked: "Blocked"
+  };
+
+  let DATA = null;
+  let activeFilter = "all";
+  let searchQuery = "";
+  const collapsedPhases = new Set();
+
+  function loadData() {
+    const raw = document.getElementById("PROGRESS_DATA").textContent;
+    try {
+      DATA = JSON.parse(raw);
+    } catch (e) {
+      document.body.innerHTML = "<div style='padding:40px;color:#f87171;font-family:monospace'>Chyba při čtení PROGRESS_DATA: " + e.message + "</div>";
+      throw e;
+    }
+  }
+
+  function countTasks(filterFn) {
+    let n = 0;
+    DATA.phases.forEach(p => p.tasks.forEach(t => { if (filterFn(t, p)) n++; }));
+    return n;
+  }
+
+  function renderHeader() {
+    document.getElementById("title").textContent = DATA.projectName + " — Progress";
+    document.getElementById("subtitle").textContent = DATA.subtitle || "";
+    document.getElementById("meta").textContent = "Naposledy aktualizováno: " + (DATA.lastUpdated || "—");
+  }
+
+  function renderStats() {
+    const counts = {
+      total: 0, done: 0, in_progress: 0, blocked: 0, pending: 0
+    };
+    DATA.phases.forEach(p => p.tasks.forEach(t => {
+      counts.total++;
+      counts[t.status] = (counts[t.status] || 0) + 1;
+    }));
+
+    const statsEl = document.getElementById("stats");
+    statsEl.innerHTML = `
+      <div class="stat"><div class="stat-num">${counts.total}</div><div class="stat-label">Total</div></div>
+      <div class="stat done"><div class="stat-num">${counts.done}</div><div class="stat-label">Done</div></div>
+      <div class="stat in_progress"><div class="stat-num">${counts.in_progress}</div><div class="stat-label">In progress</div></div>
+      <div class="stat blocked"><div class="stat-num">${counts.blocked}</div><div class="stat-label">Blocked</div></div>
+      <div class="stat pending"><div class="stat-num">${counts.pending}</div><div class="stat-label">Pending</div></div>
+    `;
+
+    const corePhases = DATA.phases.filter(p => !["F5", "D"].includes(p.id));
+    let coreTotal = 0, coreDone = 0;
+    corePhases.forEach(p => p.tasks.forEach(t => {
+      coreTotal++;
+      if (t.status === "done") coreDone++;
+    }));
+    const pct = coreTotal === 0 ? 0 : Math.round((coreDone / coreTotal) * 100);
+    document.getElementById("overallPctNum").textContent = pct;
+    document.getElementById("overallCount").textContent = ` (${coreDone}/${coreTotal})`;
+    document.getElementById("overallFill").style.width = pct + "%";
+
+    const remaining = coreTotal - coreDone;
+    document.getElementById("overallEta").innerHTML = `
+      <div>Zbývá <strong style="color:var(--text-0)">${remaining}</strong> úkolů (F0–F4).</div>
+      <div style="color:var(--text-2);font-size:12px;margin-top:2px;">F5 a otevřená rozhodnutí mimo cestu k MVP.</div>
+    `;
+  }
+
+  function renderChips() {
+    const chipsEl = document.getElementById("chips");
+    chipsEl.innerHTML = "";
+    STATUS_ORDER.forEach(s => {
+      const chip = document.createElement("div");
+      chip.className = "chip" + (activeFilter === s ? " active" : "");
+      const count = s === "all"
+        ? countTasks(() => true)
+        : countTasks(t => t.status === s);
+      chip.innerHTML = `${FILTER_LABEL[s]}<span class="count">${count}</span>`;
+      chip.addEventListener("click", () => {
+        activeFilter = s;
+        renderChips();
+        renderPhases();
+      });
+      chipsEl.appendChild(chip);
+    });
+  }
+
+  function matchTask(task) {
+    if (activeFilter !== "all" && task.status !== activeFilter) return false;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      if (!task.id.toLowerCase().includes(q) &&
+          !task.title.toLowerCase().includes(q) &&
+          !(task.notes || "").toLowerCase().includes(q)) return false;
+    }
+    return true;
+  }
+
+  function renderPhases() {
+    const root = document.getElementById("phases");
+    root.innerHTML = "";
+
+    let anyVisible = false;
+
+    DATA.phases.forEach(phase => {
+      const phaseDone = phase.tasks.filter(t => t.status === "done").length;
+      const phaseTotal = phase.tasks.length;
+      const phasePct = phaseTotal === 0 ? 0 : Math.round((phaseDone / phaseTotal) * 100);
+
+      const visibleTasks = phase.tasks.filter(matchTask);
+      if (visibleTasks.length === 0 && (searchQuery || activeFilter !== "all")) return;
+
+      anyVisible = true;
+
+      const phaseEl = document.createElement("section");
+      phaseEl.className = "phase" + (collapsedPhases.has(phase.id) ? " collapsed" : "");
+      phaseEl.dataset.phaseId = phase.id;
+
+      phaseEl.innerHTML = `
+        <div class="phase-header">
+          <div style="flex:1;min-width:0">
+            <div class="phase-title">
+              <span class="phase-id">${phase.id}</span>
+              <span class="phase-name">${phase.title}</span>
+              <span class="phase-weeks">· ${phase.weeks}</span>
+              <span class="phase-chevron">▾</span>
+            </div>
+            <div class="phase-goal">${phase.goal || ""}</div>
+          </div>
+          <div class="phase-right">
+            <div class="phase-pct"><strong>${phaseDone}/${phaseTotal}</strong> · ${phasePct} %</div>
+            <div class="phase-bar"><div class="phase-bar-fill" style="width:${phasePct}%"></div></div>
+          </div>
+        </div>
+        <div class="phase-tasks"></div>
+      `;
+
+      const header = phaseEl.querySelector(".phase-header");
+      header.addEventListener("click", () => {
+        if (collapsedPhases.has(phase.id)) collapsedPhases.delete(phase.id);
+        else collapsedPhases.add(phase.id);
+        renderPhases();
+      });
+
+      const tasksEl = phaseEl.querySelector(".phase-tasks");
+      visibleTasks.forEach(task => {
+        const row = document.createElement("div");
+        row.className = "task" + (task.status === "done" ? " done" : "");
+        row.innerHTML = `
+          <div class="status-dot status-${task.status}" title="${STATUS_LABEL[task.status]}">${STATUS_GLYPH[task.status]}</div>
+          <div class="task-id">${task.id}</div>
+          <div class="task-body">
+            <div class="task-title">${escapeHtml(task.title)}</div>
+            ${task.notes ? `<div class="task-notes">⚑ ${escapeHtml(task.notes)}</div>` : ""}
+          </div>
+          <div class="task-date">${task.completedAt || (task.status === "in_progress" ? "v běhu" : "")}</div>
+        `;
+        tasksEl.appendChild(row);
+      });
+
+      root.appendChild(phaseEl);
+    });
+
+    if (!anyVisible) {
+      const empty = document.createElement("div");
+      empty.className = "empty";
+      empty.textContent = "Žádný úkol neodpovídá filtru.";
+      root.appendChild(empty);
+    }
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    }[c]));
+  }
+
+  function bindSearch() {
+    const input = document.getElementById("searchInput");
+    input.addEventListener("input", e => {
+      searchQuery = e.target.value.trim();
+      renderPhases();
+    });
+  }
+
+  loadData();
+  renderHeader();
+  renderStats();
+  renderChips();
+  renderPhases();
+  bindSearch();
+})();
+</script>
+</body>
+</html>

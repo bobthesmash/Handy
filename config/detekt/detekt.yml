@@ -1,0 +1,112 @@
+# Detekt overrides for Handy — pragmatic thresholds; tighten incrementally.
+config:
+  validation: true
+
+complexity:
+  CyclomaticComplexMethod:
+    active: true
+    threshold: 35
+  LongMethod:
+    active: true
+    threshold: 400
+  LongParameterList:
+    active: true
+    functionThreshold: 10
+    constructorThreshold: 12
+  NestedBlockDepth:
+    active: true
+    threshold: 6
+  TooManyFunctions:
+    active: true
+    thresholdInFiles: 30
+    thresholdInClasses: 20
+    thresholdInInterfaces: 20
+    thresholdInObjects: 20
+    thresholdInEnums: 20
+
+empty-blocks:
+  EmptyFunctionBlock:
+    active: true
+
+style:
+  LoopWithTooManyJumpStatements:
+    active: false
+  MagicNumber:
+    active: true
+    ignoreNumbers:
+      [
+        "-1",
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "12",
+        "15",
+        "16",
+        "24",
+        "30",
+        "32",
+        "60",
+        "64",
+        "80",
+        "100",
+        "128",
+        "192",
+        "256",
+        "512",
+        "576",
+        "1000",
+        "8000",
+        "16000",
+        "32768",
+        "380",
+        "0.78",
+        "0.78f",
+        "4500",
+      ]
+    ignoreLocalVariableDeclaration: true
+    ignorePropertyDeclaration: true
+    ignoreCompanionObjectPropertyDeclaration: true
+    ignoreConstantDeclaration: true
+  MaxLineLength:
+    active: true
+    maxLineLength: 140
+  ReturnCount:
+    active: true
+    max: 5
+    excludeReturnFromLambda: true
+  WildcardImport:
+    active: true
+  UseCheckOrError:
+    active: false
+  UseRequire:
+    active: false
+  UnusedPrivateMember:
+    active: true
+    ignoreAnnotated:
+      - Preview
+
+naming:
+  FunctionNaming:
+    active: true
+    functionPattern: "([a-z][a-zA-Z0-9]*)|(`.*`)"
+    ignoreAnnotated:
+      - Composable
+  TopLevelPropertyNaming:
+    active: true
+    constantPattern: "[A-Z][_A-Z0-9]*"
+
+potential-bugs:
+  Deprecation:
+    active: true
+
+exceptions:
+  TooGenericExceptionCaught:
+    active: false

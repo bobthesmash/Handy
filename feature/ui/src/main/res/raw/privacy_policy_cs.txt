@@ -1,0 +1,50 @@
+Zásady ochrany osobních údajů — Handy
+
+Účinnost: 2026-05-17
+Verze: 1.2
+
+SPRÁVCE
+Aplikace Handy zpracovává citlivá data výhradně na zařízení uživatele. Neprovozujeme vlastní cloud pro ukládání hlasu, přepisů ani hlasových otisků. Kontakt na vývojáře uveď u distribuce aplikace (např. Google Play).
+
+SHRNUTÍ
+• Hlas a audio se nepřenášejí z telefonu za účelem rozpoznávání mimo zařízení — rozpoznávání běží lokálně (offline modely).
+• Hlasový otisk (embedding) je v šifrovaném úložišti na zařízení (Android EncryptedSharedPreferences).
+• Telemetrie je ve výchozím stavu vypnutá; pokud ji zapneš v Nastavení → Diagnostika, ukládá se jen lokální soubor NDJSON v úložišti aplikace (filesDir) bez odeslání na náš server. Do souboru se neukládá ani audio ani text hodnocení beta — u uložené beta zpětné vazyby jen počet hvězd.
+• Záloha profilu je volba uživatele: šifrovaný soubor, který uložíš tam, kam zvolíš.
+• Řádek verze aplikace lze někdy v UI zkopírovat dlouhým klepnutím do schránky zařízení — jen tehdy aktivuješ kopírování ty; aplikace tento text sama přes síť neodesílá.
+
+DATA NA ZAŘÍZENÍ
+Audio z mikrofonu — probuzení, příkazy, zápis hlasu, potvrzení citlivých akcí (RAM / krátkodobé buffery).
+Hlasový embedding — ověření hlasu (šifrované prefs).
+Kontakty a čísla (s uděleným oprávněním) — hovory a SMS dle příkazu (paměť, systémové API).
+Aliasy kontaktů — lokální databáze Room.
+Text přepisu (ASR) — zpracování v paměti.
+Oznámení (s povoleným přístupem) — čtení či odpověď dle Androidu.
+Volitelná lokální telemetrie — ladění: typy událostí a metriky (např. dokončené intenty, latence, nízká jistota ASR, falešná probuzení; u beta zpětné vazyby jen hvězdy); bez audio ani textu zpětné vazyby v tomto souboru (NDJSON v úložišti aplikace).
+Verze aplikace (řádek v UI) — zobrazení; volitelný přenos jen do systémové schránky po dlouhém klepnutí (bez automatického odeslání aplikace).
+
+SÍŤ (INTERNET)
+V manifestu může být oprávnění INTERNET. Picovoice Porcupine může potřebovat stažení či ověření licence (Komunikace s Picovoice, ne nahrávání hlasu na „náš server“). Jádro asistenta je zamýšleno offline.
+
+OPRÁVNĚNÍ ANDROID
+RECORD_AUDIO — poslech a příkazy.
+POST_NOTIFICATIONS / foreground služba — poslech na pozadí s notifikací.
+BLUETOOTH_CONNECT — headset.
+CALL_PHONE, READ_CONTACTS, SEND_SMS — volání a SMS (volitelné).
+CAMERA — svítilna (volitelné).
+RECEIVE_BOOT_COMPLETED — obnova po restartu.
+Přístup k oznámením zapínáš v systému Androidu — v aplikaci je k tomu návod.
+
+DĚTI
+Aplikace není určena dětem do 13 let.
+
+MEZINÁRODNÍ
+Nedefinujeme přenos tvých výše uvedených údajů k nám jako cloudové službě. Třetí strany (např. licence) mají vlastní podmínky.
+
+ZMĚNY
+Aktualizace dokumentu s novým datem účinnosti.
+
+GDPR (ORIENTAČNĚ)
+Většina zpracování je lokálně: práva si můžeš uplatnit v Androidu (smazání dat aplikace, odvolání práv, odinstalace). U třetích stran dle jejich dokumentace.
+
+Text je informativní a nenahrazuje právní posudek. Před zveřejněním v obchodě konzultuj s právníkem.
