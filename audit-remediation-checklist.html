@@ -9,7 +9,7 @@
 {
   "title": "Handy",
   "subtitle": "Checklist náprav (znalecký posudek ze dne 16. 5. 2026). U řady ID je doplněné pole „Stav nápravy“ podle změn v repozitáři (viz git diff / IMPLEMENTATION_PLAN).",
-  "lastUpdated": "2026-05-17",
+  "lastUpdated": "2026-05-16",
   "storageKey": "handy_audit_remediation_v1",
   "sections": [
     {
@@ -48,7 +48,7 @@
       "goal": "Detekce spouští těžké modely, ne tlačítko demo panelu.",
       "items": [
         { "id": "D-01", "text": "Integrovat Porcupine nebo OpenWakeWord do loopu nad `MonoPcmRingBuffer` / EarService.", "hint": "`WakeWordEngine` z knihovny bere vlastní AudioRecord.", "doneNote": "Porcupine: `PorcupineEarWakePump` čte PCM přes `EarAudioBridge` / ring buffer (jeden recorder v `EarService`). OpenWakeWord: upstream nemá veřejný vstup PCM (`AudioProcessor` internal) — dokumentováno v ADR 0001 + `OpenWakeWordEngineFactory` KDoc." },
-        { "id": "D-02", "text": "Na detekci volat ekvivalent `noteWakeWordForHeavyModels()` a logging `HandyLatency`.", "hint": "`docs/benchmarks/latency.md` měření až pak dává smysl.", "doneNote": "Po detekci `WakeWordSignalBus.emitWakeKick()` → VM sběr → `noteWakeWordForHeavyModels()`; latence viz tag `HandyLatency` v protokolu v `docs/benchmarks/latency.md`." },
+        { "id": "D-02", "text": "Na detekci volat ekvivalent `noteWakeWordForHeavyModels()` a logging `HandyLatency`.", "hint": "`docs/benchmarks/latency.md` měření až pak dává smysl; OEM poznámky k referenčnímu telefonu v `docs/device-notes/galaxy-s20.md`; rejstřík `docs/device-notes/README.md` ([D-001]).", "doneNote": "Po detekci `WakeWordSignalBus.emitWakeKick()` → VM sběr → `noteWakeWordForHeavyModels()`; latence viz tag `HandyLatency` v protokolu v `docs/benchmarks/latency.md`. Referenční HW [D-001]: `docs/device-notes/galaxy-s20.md`, rejstřík `docs/device-notes/README.md`." },
         { "id": "D-03", "text": "Ověřit `WakeWordInferenceBudget` se skutečně používá v inference smyčce.", "hint": "Konstanta + test bez integrace nestačí na F3-T04.", "doneNote": "`PorcupineEarWakePump` používá interval z budgetu v hlavní smyčce; citlivostSlider → přestavba Porcupine + `PorcupinePcmFrameAccumulator` + testy." },
         { "id": "D-04", "text": "Doplnit ONNX `openwakeword/` soubory nebo dokumentovat jen-Porcupine cestu v README.", "hint": "V repu zatím jen README v assets.", "doneNote": "Kořenový README + ADR 0001 + `assets/openwakeword/README.txt`: produkční cesta Porcupine; OWW jako volitelné váhy / druhý recorder." }
       ]
@@ -78,10 +78,10 @@
       "title": "Měření, DoD dokumentace vs šablona",
       "goal": "Šablona v markdownu ≠ splněný task měření.",
       "items": [
-        { "id": "G-01", "text": "Vyplnit `docs/benchmarks/latency.md` nebo nastavit úkol zpět na `blocked` bez falešného done.", "hint": "", "doneNote": "Záhlaví „Stav měření“: prázdná tabulka = žádná čísla v repu; F0-T07 v `progress.html` blocked do HW." },
-        { "id": "G-02", "text": "Vyplnit `docs/benchmarks/battery.md` měřeními z HW nebo upřesnit rozlišení šablona/čísla.", "hint": "", "doneNote": "Stejně jako G-01 — sekce Stav měření; F0-T08 blocked do HW." },
-        { "id": "G-03", "text": "Vyplnit `docs/qa/lockscreen-matrix.md` (buňky OK/FAIL).", "hint": "", "doneNote": "Záhlaví „Stav QA“: ⬜ ≠ OK; DoD F3 vyžaduje skutečné buňky — šablona je odděleně od měření." },
-        { "id": "G-04", "text": "V plánu rozdělit pod-úkoly: vytvořit dokument vs naměřit data.", "hint": "`IMPLEMENTATION_PLAN.md` + `progress.html`.", "doneNote": "Podsekce „Měření a QA dokumenty vs done“ + upřesnění F3-T01 / F3-T03 v `IMPLEMENTATION_PLAN.md`." }
+        { "id": "G-01", "text": "Vyplnit `docs/benchmarks/latency.md` nebo nastavit úkol zpět na `blocked` bez falešného done.", "hint": "", "doneNote": "Záhlaví „Stav měření“: prázdná tabulka = žádná čísla v repu; F0-T07 v `progress.html` blocked do HW. Referenční HW [D-001]: `docs/device-notes/galaxy-s20.md`, rejstřík `docs/device-notes/README.md`." },
+        { "id": "G-02", "text": "Vyplnit `docs/benchmarks/battery.md` měřeními z HW nebo upřesnit rozlišení šablona/čísla.", "hint": "", "doneNote": "Stejně jako G-01 — sekce Stav měření; F0-T08 blocked do HW. Referenční HW [D-001]: `docs/device-notes/galaxy-s20.md`, rejstřík `docs/device-notes/README.md`." },
+        { "id": "G-03", "text": "Vyplnit `docs/qa/lockscreen-matrix.md` (buňky OK/FAIL).", "hint": "", "doneNote": "Záhlaví „Stav QA“: ⬜ ≠ OK; DoD F3 vyžaduje skutečné buňky — šablona je odděleně od měření. Kontext One UI keyguard / notifikace: `docs/device-notes/galaxy-s20.md`; rejstřík `docs/device-notes/README.md` ([D-001])." },
+        { "id": "G-04", "text": "V plánu rozdělit pod-úkoly: vytvořit dokument vs naměřit data.", "hint": "`IMPLEMENTATION_PLAN.md` + `progress.html`.", "doneNote": "Podsekce „Měření a QA dokumenty vs done“ + upřesnění F3-T01 / F3-T03 v `IMPLEMENTATION_PLAN.md`. Referenční telefon dokumentován v `docs/device-notes/galaxy-s20.md`; rejstřík `docs/device-notes/README.md` ([D-001])." }
       ]
     },
     {
@@ -101,7 +101,7 @@
       "goal": "Drobky co snižují důvěru při onboarding vývojáře.",
       "items": [
         { "id": "I-01", "text": "Opravit encoding `android/README.md` na validní UTF-8 (bez mojibake).", "hint": "", "doneNote": "Soubor `android/README.md` je platné UTF-8 (CS znaky OK); bez mojibake v aktuální kopii." },
-        { "id": "I-02", "text": "Zkontaktovat odkaz README CI badge `YOUR_GITHUB_USER/Handy` po známém owner/repo.", "hint": "", "doneNote": "Stále placeholder — nahradit po známém GitHub owner/repo (README odkazuje na `ci.yml`)." }
+        { "id": "I-02", "text": "Zkontaktovat odkaz README CI badge `YOUR_GITHUB_USER/Handy` po známém owner/repo.", "hint": "", "doneNote": "README používá `bobthesmash/Handy` (`ci.yml` badge + odkaz). Changelog v plánu může stále říkat „placeholder“ z historického řádku." }
       ]
     }
   ]

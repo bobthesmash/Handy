@@ -13,7 +13,7 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 55
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -40,5 +40,5 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Gradle ciHandy (ktlint + detekt + lint + tests + assembleDebug)
-        run: ./gradlew ciHandy --no-daemon --stacktrace
+      - name: Gradle ciHandyFull (= ciHandy + assembleRelease / R8)
+        run: ./gradlew ciHandyFull --no-daemon --stacktrace

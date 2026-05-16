@@ -3,6 +3,7 @@ package cz.handy.feature.ui.onnx
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+
 class BundledOnnxBundleHealthTest {
     @Test
     fun gaps_allPresent_empty() {

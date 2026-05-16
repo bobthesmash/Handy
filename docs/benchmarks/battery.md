@@ -6,9 +6,9 @@
 
 ### Referenční HW (`[D-001]`)
 
-**Samsung Galaxy S20** — battery optimalizace Samsungu / One UI významně mění výsledky; při měření zapisovat přesný Android a zda jsou např. „nekontrolovat optimalizaci“ / výjimka pro Handy zapnutá.
+**Samsung Galaxy S20** — battery optimalizace Samsungu / One UI významně mění výsledky; ve záznamu měření bývá užitečné uvést přesný Android a zda jsou např. „nekontrolovat optimalizaci“ / výjimka pro Handy zapnutá.
 
-Kontext k OEM: [`docs/device-notes/galaxy-s20.md`](../device-notes/galaxy-s20.md).
+Kontext k OEM: [`galaxy-s20.md`](../device-notes/galaxy-s20.md) · rejstřík [`device-notes/README.md`](../device-notes/README.md).
 
 Cílová metrika ve F0 Definition of Done: **≤ ~6 %/h** baterie v režimu poslechu (wake + ring buffer bez plného ASR pipeline).
 

@@ -45,9 +45,9 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.handy.core.audio.EarService
 import cz.handy.core.common.dialog.DialogPhase
-import cz.handy.feature.ui.pipeline.HandyAssistantViewModel
 import cz.handy.feature.ui.onnx.BundledOnnxBundleHealth
 import cz.handy.feature.ui.onnx.OnnxMissingModelsBanner
+import cz.handy.feature.ui.pipeline.HandyAssistantViewModel
 import cz.handy.feature.ui.theme.HandyTheme
 import cz.handy.feature.voiceid.confirm.DestructiveConfirmVoiceVerifier
 import cz.handy.feature.voiceid.enrollment.EnrollmentClipRecorder

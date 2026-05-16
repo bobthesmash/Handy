@@ -20,9 +20,7 @@ class EnrollmentProfileFinalizer(
 ) {
     private val app = context.applicationContext
 
-    suspend fun finalizeEnrollmentClips(
-        phraseCount: Int,
-    ): Result<Unit> =
+    suspend fun finalizeEnrollmentClips(phraseCount: Int): Result<Unit> =
         withContext(Dispatchers.Default) {
             try {
                 if (phraseCount <= 0) {

@@ -77,6 +77,5 @@ object BundledOnnxBundleHealth {
     }
 
     /** Zda má smysl spouštět Sherpa příjem řeči. */
-    fun isSherpaListeningPossible(context: Context): Boolean =
-        CzZipformerSherpaAssets.isBundled(context.applicationContext)
+    fun isSherpaListeningPossible(context: Context): Boolean = CzZipformerSherpaAssets.isBundled(context.applicationContext)
 }

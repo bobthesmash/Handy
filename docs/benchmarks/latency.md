@@ -6,9 +6,9 @@
 
 ### Referenční HW (`[D-001]`)
 
-**Samsung Galaxy S20** (regionálně SM-G980x / Exynos nebo Snapdragon podle SKU). Při prvním měření dopiš do tabulky níže přesný **Android / API level**, **One UI** (pokud je uvedeno v „O telefonu“) a **build číslo**.
+**Samsung Galaxy S20** (regionálně SM-G980x / Exynos nebo Snapdragon podle SKU). **Android / API level**, **One UI** (pokud je v „O telefonu“) a **build číslo** se uvádějí v tabulce „Záznam měření“ níže u konkrétního měření.
 
-Další poznámky k One UI / baterii / keyguardu: [`docs/device-notes/galaxy-s20.md`](../device-notes/galaxy-s20.md).
+Další poznámky k One UI / baterii / keyguardu: [`galaxy-s20.md`](../device-notes/galaxy-s20.md) · rejstřík [`device-notes/README.md`](../device-notes/README.md).
 
 Šablona měření pro referenční telefon.
 
@@ -16,7 +16,7 @@ Další poznámky k One UI / baterii / keyguardu: [`docs/device-notes/galaxy-s20
 
 | Kroky | Poznámka |
 |-------|---------|
-| 1 | Spusť `Handy`, připoj BT handsfree headset. |
+| 1 | Aplikace `Handy` v popředí; BT handsfree headset připojený. |
 | 2 | V logcat vyfiltruj tag `HandyWwBench` po cold start — zapiš `avgProcessMs` pro Porcupine (bez ASR je to jen rámcové inference). |
 | 3 | Pro **Sherpa graf**: na domovské obrazovce (demo panel s MVP řetězcem) klepni **„Přednačíst ASR (simulace wake…“** — volá [HandyAssistantViewModel.noteWakeWordForHeavyModels]. V logcat filtruj tag **`HandyLatency`**: řádek `sherpa_ready wakeToReadyMs=…` je čas od signálu wake po dokončení [SherpaStreamingRecognizerHolder.acquire] (příprava ONNX grafa; ještě **ne** první partial z mikrofonu). |
 | 4 | Až bude mikro-buffer krmit Sherpu, přibude řádek `first_partial wakeToPartialMs=… nonEmpty=…` — ten porovnej s cílem ≤ 700 ms E2E. |
@@ -27,7 +27,7 @@ Další poznámky k One UI / baterii / keyguardu: [`docs/device-notes/galaxy-s20
 adb logcat -s HandyLatency HandyWwBench
 ```
 
-### Záznam měření (doplňovat při testech)
+### Záznam měření (po běhu na zařízení)
 
 | Datum | Zařízení / API | Wake engine | Wake→Sherpa ready (ms) | Wake→1. partial (ms) | Wake→Porcupine frame (avg ms) |
 |-------|----------------|-------------|------------------------|------------------------|------------------------------|

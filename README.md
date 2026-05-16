@@ -12,14 +12,20 @@ Lokální hlasový asistent pro Android (asistivní ovládání, biometrie hlase
 
 ### Referenční HW (měření / QA)
 
-- **Samsung Galaxy S20** (`[D-001]` v `IMPLEMENTATION_PLAN.md`) — výchozí telefon pro latenci (`docs/benchmarks/latency.md`), baterii (`docs/benchmarks/battery.md`), lockscreen matrix (`docs/qa/lockscreen-matrix.md`) a field test. Přesnou verzi Androidu / One UI zapisovat při prvních měřeních do příslušných tabulek.
-- Oborový kontext k této řadě bez předpisů: `docs/device-notes/galaxy-s20.md`.
+- **Samsung Galaxy S20** (`[D-001]` v `IMPLEMENTATION_PLAN.md`) — výchozí telefon pro latenci (`docs/benchmarks/latency.md`), baterii (`docs/benchmarks/battery.md`), lockscreen matrix (`docs/qa/lockscreen-matrix.md`) a field test. Přesná verze Androidu / One UI se eviduje v tabulkách těchto souborů spolu s měřeními.
+- Oborový kontext k řadě S20: [`docs/device-notes/galaxy-s20.md`](docs/device-notes/galaxy-s20.md) — rejstřík adresáře: [`docs/device-notes/README.md`](docs/device-notes/README.md).
 
 ## Build
 
 ```bash
 chmod +x gradlew   # jen na Linux/macOS
 ./gradlew ciHandy
+```
+
+Kompletní kontrola včetně **release APK a R8** (jako kombinovaný běh v GitHub CI):
+
+```bash
+./gradlew ciHandyFull
 ```
 
 Nebo jen APK:
@@ -43,6 +49,8 @@ Nebo jen přetáhni APK do zařízení a otevři ho v souborové aplikaci (u ně
 ### Přehled vývoje
 
 Soubor **`progress.html`** je lokální stavová nástěnka — otevři ho v prohlížeči; můžeš z něj pořídit screenshot pro dokumentaci nebo prezentaci.
+
+**Pro nové přispěvatele (lidi i LLM):** přečtěte **[`COMPLETION_GUIDE.md`](./COMPLETION_GUIDE.md)** — kompaktní mapa toho, co zbývá k release candidate, v jakém pořadí to dělat, a které úkoly jsou blokované HW / rozhodnutími uživatele a **nesmí** se podvrhnout.
 
 ### Odznak CI
 

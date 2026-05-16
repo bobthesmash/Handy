@@ -27,9 +27,7 @@ import cz.handy.feature.ui.R
  * Shrnutí chybějících ONNX v APK pro vývojáře (popis kde soubory v repu doplnit, bez jejich stahování z aplikace).
  */
 @Composable
-internal fun OnnxMissingModelsBanner(
-    modifier: Modifier = Modifier,
-) {
+internal fun OnnxMissingModelsBanner(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val app = context.applicationContext
     val gaps =
@@ -97,7 +95,8 @@ internal fun OnnxMissingModelsBanner(
                     val text =
                         BundledOnnxBundleHealth.clipboardPlainTextMissing(gaps)
 
-                    ContextCompat.getSystemService(context, ClipboardManager::class.java)
+                    ContextCompat
+                        .getSystemService(context, ClipboardManager::class.java)
                         ?.setPrimaryClip(
                             ClipData.newPlainText("Handy ONNX paths", text),
                         )

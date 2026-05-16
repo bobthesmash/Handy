@@ -248,7 +248,8 @@ class HandyAssistantViewModel(
                 return
             }
         capturePhraseTurnPcm =
-            !simulateVoicePipelineBypass && embeddingStore.hasSpeakerProfile()
+            !simulateVoicePipelineBypass &&
+            embeddingStore.hasSpeakerProfile()
         phraseTurnPcmChunks.clear()
         val ring = EarAudioBridge.ringBufferOrNull() ?: return
         pcmConsumeMarker = ring.totalSamplesWritten()

@@ -230,7 +230,7 @@ fun EnrollmentBody(
                                 false to (
                                     context.getString(R.string.enrollment_save_error_prefix) +
                                         ": $suffix"
-                                    )
+                                )
                             },
                         )
                 }

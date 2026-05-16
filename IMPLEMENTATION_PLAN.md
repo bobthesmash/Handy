@@ -1,5 +1,7 @@
 # Handy – Implementation Plan
 
+> **Než začneš:** otevři **[`COMPLETION_GUIDE.md`](./COMPLETION_GUIDE.md)** — kompaktní mapa zbývajících úkolů, závazné pořadí a seznam častých halucinací, kterých se nízkokontextoví workeři dopouštějí. Zdroj pravdy zůstává tenhle soubor + `progress.html`.
+
 > **Pro agent workery:** Když dokončíš úkol, **musíš** udělat OBĚ věci:
 > 1. V tomto souboru: změň `- [ ]` na `- [x]` u daného `[ID]` a přidej krátký commit-style záznam do sekce *Changelog* dole.
 > 2. V `progress.html`: v JSON bloku najdi task s tím samým `id` a změň `"status": "pending"` → `"status": "done"`, vyplň `"completedAt"` na dnešní datum (`YYYY-MM-DD`).
@@ -166,7 +168,7 @@ Soubory `docs/benchmarks/latency.md`, `docs/benchmarks/battery.md`, `docs/qa/loc
 
 ## Otevřená rozhodnutí (uživatel musí zodpovědět)
 
-- [x] **[D-001]** Referenční zařízení pro PoC měření a QA: **Samsung Galaxy S20** řada (v zařízení typicky **SM-G98x** podle submodelu/regionu). Přehled OEM bez předpisů: `docs/device-notes/galaxy-s20.md`; čísla latence/baterie do `docs/benchmarks/latency.md` a `battery.md`
+- [x] **[D-001]** Referenční zařízení pro PoC měření a QA: **Samsung Galaxy S20** řada (v zařízení typicky **SM-G98x** podle submodelu/regionu). Přehled OEM: `docs/device-notes/galaxy-s20.md`; rejstřík adresáře: `docs/device-notes/README.md`; latenci a baterii evidují měřící šablony v `docs/benchmarks/latency.md` a `battery.md`.
 - [ ] **[D-002]** Jazyk: jen CZ, nebo CZ+EN?
 - [ ] **[D-003]** Wake-word: Porcupine vs openWakeWord (rozhodne `[F0-T05]` benchmark + uživatel)
 - [ ] **[D-004]** Distribuce: Play Store (znamená sensitive permission review) vs sideload/F-Droid

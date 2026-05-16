@@ -1,12 +1,10 @@
 package cz.handy.feature.voiceid.ecapa
 
 import cz.handy.core.common.voice.VoiceEmbeddingDimensions
-import kotlin.math.cos
 import kotlin.math.log10
 import kotlin.math.max
 import kotlin.math.pow
 import kotlin.math.roundToInt
-import kotlin.math.sin
 
 /**
  * Log-mel Fbank přiblížený řetězi SpeechBrain —
@@ -52,7 +50,6 @@ class SpeechbrainEcapaPreprocessor(
 
     private val hopSamples = ((sampleRate / 1000f) * hopMs).roundToInt().coerceAtLeast(1)
     private val winSamples = ((sampleRate / 1000f) * winMs).roundToInt().coerceIn(2, nFft)
-    private val nBins = nFft / 2 + 1
 
     /** Mel váhy **[freqBin][mel]** v rozsahu 0…1 jako v SpeechBrain `triangular`. */
     private val melWeights: Array<FloatArray> =
@@ -137,23 +134,15 @@ class SpeechbrainEcapaPreprocessor(
 
     /** Jednostranné spektrální síly $|X[k]|^2$ pro $k \in [0, n_fft/2]$. */
     private fun fftPowerBins(frameZeroPaddedToNfft: FloatArray): FloatArray {
-        val out = FloatArray(nBins)
-        val n = nFft
-        for (k in 0 until nBins) {
-            var re = 0.0
-            var im = 0.0
-            var idx = 0
-            while (idx < n) {
-                val angle = TWO_PI_RAD * k * idx / n
-                val x = frameZeroPaddedToNfft[idx].toDouble()
-                re += x * kotlin.math.cos(angle)
-                im -= x * kotlin.math.sin(angle)
-                idx++
-            }
-            val p = (re * re + im * im).toFloat()
-            out[k] = p
+        if (nFft == EcapaStandardDftLut.ECAPA_STANDARD_N_FFT &&
+            frameZeroPaddedToNfft.size == EcapaStandardDftLut.ECAPA_STANDARD_N_FFT
+        ) {
+            return EcapaStandardDftLut.fftPowerSquaredBins400(frameZeroPaddedToNfft)
         }
-        return out
+        return EcapaStandardDftLut.fftPowerSquaredBinsSlowReference(
+            frameZeroPaddedToNfft,
+            nFft,
+        )
     }
 
     /** $10\cdot\log_{10}(\cdot)$ + globální strop **top_db** + odečet jako SpeechBrain `_amplitude_to_DB`. */

@@ -13,8 +13,7 @@ class EnrollmentEmbeddingCentroidTest {
                 val n =
                     sqrt(
                         (it[0] * it[0] + it[1] * it[1]).toDouble(),
-                    )
-                        .toFloat()
+                    ).toFloat()
                         .coerceAtLeast(1e-9f)
                 it[0] /= n
                 it[1] /= n
@@ -30,8 +29,7 @@ class EnrollmentEmbeddingCentroidTest {
         val nn =
             sqrt(
                 (rawSum[0] * rawSum[0] + rawSum[1] * rawSum[1]).toDouble(),
-            )
-                .toFloat()
+            ).toFloat()
                 .coerceAtLeast(1e-9f)
 
         assertEquals(rawSum[0] / nn, m[0], 1e-5f)

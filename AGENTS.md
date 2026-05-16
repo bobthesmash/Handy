@@ -7,6 +7,7 @@ Tento dokument je závazný pro každého AI agenta nebo lidského přispěvatel
 - **Plán a fáze:** `IMPLEMENTATION_PLAN.md`
 - **Vizuální dashboard:** `progress.html` (uživatel ho otevírá v prohlížeči)
 - **Architektonická rozhodnutí:** `docs/decisions/NNNN-*.md` (ADR formát)
+- **Návod jak dokončit projekt (POVINNÉ ČTENÍ pro LLM workery):** [`COMPLETION_GUIDE.md`](./COMPLETION_GUIDE.md) — shrnuje co zbývá, v jakém pořadí, a které úkoly **nesmíš** označit jako hotové bez fyzického HW / souhlasu uživatele.
 
 ## Workflow pro jeden úkol
 

@@ -6,11 +6,11 @@
 
 ## Příprava
 
-1. Jedno cílové zařízení — referenční výběr projektu **[D-001]: Samsung Galaxy S20** (jiný telefon jen pokud explicitně dokumentuješ odchylku); přesný Android / build zapisovat ve výsledku níže.
+1. Jedno cílové zařízení — referenční výběr projektu **[D-001]: Samsung Galaxy S20** (jiný telefon jen s dokumentovaným zdůvodněním); přesný Android / build se uvádí ve výsledku níže.
 2. Nahrané nebo živě generované **50 krátkých českých vět** pokrývajících MVP intenty (`HandyNluCatalogs.mvp`).
 3. Zapnutý speaker-verify dle ostrého nastavení (`T_high` / `T_low`).
 
-Kontext k referenčnímu Samsungu / One UI: [`../device-notes/galaxy-s20.md`](../device-notes/galaxy-s20.md).
+Kontext k referenčnímu Samsungu / One UI: [`galaxy-s20.md`](../device-notes/galaxy-s20.md) · rejstřík [`device-notes/README.md`](../device-notes/README.md).
 
 ## Protokol
 

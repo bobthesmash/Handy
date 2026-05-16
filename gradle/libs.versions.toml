@@ -2,6 +2,7 @@
 agp = "8.8.2"
 kotlin = "2.1.10"
 kotlinxCoroutines = "1.9.0"
+errorProneAnnotations = "2.30.0"
 compileSdk = "35"
 minSdk = "26"
 targetSdk = "35"
@@ -47,6 +48,7 @@ openwakeword-android = { group = "xyz.rementia", name = "openwakeword", version.
 onnxruntime-android = { group = "com.microsoft.onnxruntime", name = "onnxruntime-android", version.ref = "onnxRuntime" }
 androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" }
 kotlin-test-junit = { group = "org.jetbrains.kotlin", name = "kotlin-test-junit", version.ref = "kotlin" }
+google-error-prone-annotations = { group = "com.google.errorprone", name = "error_prone_annotations", version.ref = "errorProneAnnotations" }
 detekt-formatting = { group = "io.gitlab.arturbosch.detekt", name = "detekt-formatting", version.ref = "detekt" }
 
 [plugins]

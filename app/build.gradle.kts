@@ -89,6 +89,9 @@ dependencies {
     implementation(project(":feature:tts"))
     implementation(project(":feature:ui"))
 
+    // Tink/crypto transitives reference `@Immutable`; R8 needs the stubs on classpath.
+    implementation(libs.google.error.prone.annotations)
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime)
     implementation(libs.androidx.activity.ktx)

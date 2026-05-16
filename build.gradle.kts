@@ -28,8 +28,8 @@ import java.io.File
 
 /**
 
- * Single entry for CI (F0-T03): runs every subproject's ktlint, detekt, Android lint, unit tests, then :app:assembleDebug.
-
+ * Single entry pro CI (`ciHandy`): ktlint, detekt, Android lint, testy v subprojektech, `assembleDebug`.
+ * Úkol `ciHandyFull` navíc `:app:assembleRelease` — shoda s GitHub workflow.
  */
 
 gradle.projectsEvaluated {
@@ -62,30 +62,40 @@ gradle.projectsEvaluated {
             }
         }
 
-    tasks.register("ciHandy") {
+    val ciHandy =
+        tasks.register("ciHandy") {
 
-        group = "verification"
+            group = "verification"
 
-        dependsOn(checkHandyOnnxDevAssets)
+            dependsOn(checkHandyOnnxDevAssets)
 
-        description = "Aggregates ktlintCheck, detekt, lintDebug, JVM/Android unit tests, and :app:assembleDebug."
+            description =
+                "Aggregates ktlintCheck, detekt, lintDebug, JVM/Android unit tests, and :app:assembleDebug. " +
+                    "GitHub Actions also runs `:app:assembleRelease` separately (R8 sanity)."
 
-        subprojects.forEach { sub ->
+            subprojects.forEach { sub ->
 
-            sub.tasks.findByName("ktlintCheck")?.let { dependsOn(it) }
+                sub.tasks.findByName("ktlintCheck")?.let { dependsOn(it) }
 
-            sub.tasks.findByName("detekt")?.let { dependsOn(it) }
+                sub.tasks.findByName("detekt")?.let { dependsOn(it) }
 
-            sub.tasks.findByName("lintDebug")?.let { dependsOn(it) }
+                sub.tasks.findByName("lintDebug")?.let { dependsOn(it) }
 
-            sub.tasks.findByName("test")?.let { dependsOn(it) }
+                sub.tasks.findByName("test")?.let { dependsOn(it) }
 
-            sub.tasks.findByName("testDebugUnitTest")?.let { dependsOn(it) }
+                sub.tasks.findByName("testDebugUnitTest")?.let { dependsOn(it) }
 
+            }
+
+            dependsOn(project(":app").tasks.named("assembleDebug"))
         }
 
-        dependsOn(project(":app").tasks.named("assembleDebug"))
-
+    tasks.register("ciHandyFull") {
+        group = "verification"
+        description =
+            "Runs `ciHandy` plus `:app:assembleRelease` — stejný rozsah lokálně jako kombinovaný GitHub CI job."
+        dependsOn(ciHandy)
+        dependsOn(project(":app").tasks.named("assembleRelease"))
     }
 
 }
