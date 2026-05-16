@@ -166,7 +166,7 @@ Soubory `docs/benchmarks/latency.md`, `docs/benchmarks/battery.md`, `docs/qa/loc
 
 ## Otevřená rozhodnutí (uživatel musí zodpovědět)
 
-- [ ] **[D-001]** Cílový telefon / Android verze pro PoC (ovlivní výběr ASR modelu)
+- [x] **[D-001]** Referenční zařízení pro PoC měření a QA: **Samsung Galaxy S20** (regionálně SM-G980x); přesný Android API / security patch doplnit při prvním měření do `docs/benchmarks/latency.md` a `battery.md`
 - [ ] **[D-002]** Jazyk: jen CZ, nebo CZ+EN?
 - [ ] **[D-003]** Wake-word: Porcupine vs openWakeWord (rozhodne `[F0-T05]` benchmark + uživatel)
 - [ ] **[D-004]** Distribuce: Play Store (znamená sensitive permission review) vs sideload/F-Droid
@@ -181,6 +181,7 @@ Soubory `docs/benchmarks/latency.md`, `docs/benchmarks/battery.md`, `docs/qa/loc
 > Agent workery sem přidávají řádky podle pořadí dokončení. Formát: `YYYY-MM-DD  [ID]  Krátký popis  (worker: <jméno/handle>)`.
 
 ```
+2026-05-17  [D-001]  Referenční HW pro měření F0/F3 a QA matrix: Samsung Galaxy S20; odkázáno v README + benchmark šablonách + `progress.html`.  (worker: Cursor agent)
 2026-05-17  [F4-T04]  Play Data safety podklad: řádek verze (`AppVersionFooterText`) — volitelný dlouhý stisk → systémová schránka, vlastní vývojář aplikaci data z toho neodesílá.  (worker: Cursor agent)
 2026-05-17  [F4-T04]  Privacy policy v1.2: dlouhé klepnutí řádek verze → systémová schránka (uživatelské gesto, bez auto-odesílání); tabulka + shrnutí CS/EN; sync `docs/legal/` + `res/raw/`.  (worker: Cursor agent)
 2026-05-16  [F4-T04]  Privacy policy v1.1 (účinnost stejný den): odkazuje na zapnutí lokální NDJSON telemetrie v Nastavení → Diagnostika; tabulka a shrnutí vylučují audio a text beta z telemetrického souboru; sync `docs/legal/` + `res/raw/` + podklad Play Data safety.  (worker: Cursor agent)

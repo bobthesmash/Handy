@@ -6,7 +6,7 @@
 
 ## Příprava
 
-1. Jedno cílové zařízení, stejné podmínky (hlasitost, vzdálenost od mic / BT headset dle scénáře).
+1. Jedno cílové zařízení — referenční výběr projektu **[D-001]: Samsung Galaxy S20** (jiný telefon jen pokud explicitně dokumentuješ odchylku); přesný Android / build zapisovat ve výsledku níže.
 2. Nahrané nebo živě generované **50 krátkých českých vět** pokrývajících MVP intenty (`HandyNluCatalogs.mvp`).
 3. Zapnutý speaker-verify dle ostrého nastavení (`T_high` / `T_low`).
 

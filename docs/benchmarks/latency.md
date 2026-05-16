@@ -4,6 +4,10 @@
 
 **V tomto repozitáři nejsou doplněná ověřená čísla** — tabulka „Záznam měření“ níže zůstává prázdná, dokud neproběhne měření na fyzickém zařízení. Postup a logové tagy jsou závazný **protokol**, ne výsledek. Úkol `[F0-T07]` je v `progress.html` veden jako **`blocked`** do doby HW.
 
+### Referenční HW (`[D-001]`)
+
+**Samsung Galaxy S20** (regionálně SM-G980x / Exynos nebo Snapdragon podle SKU). Při prvním měření dopiš do tabulky níže přesný **Android / API level**, **One UI** (pokud je uvedeno v „O telefonu“) a **build číslo**.
+
 Šablona měření pro referenční telefon.
 
 ## Wake-word → ASR-ready (cíl F0 Definition of Done: ≤ 700 ms)

@@ -6,8 +6,8 @@ Speaker verification musí **< 2 %** vzorků klasifikovat jako **StrongAccept** 
 
 ## Příprava
 
-1. **30 krátkých nezávislých řečových vzorků** od různých mluvčích (ne majitel), mono 16 kHz pokud možno.
-2. Na zařízení nahraný embedding majitele (stejný režim jako produkce).
+1. **Zařízení:** referenční **[D-001]: Samsung Galaxy S20** (nebo ekvivalent se zdůvodněním); na zařízení nahraný embedding majitele ve stejném režimu jako produkce.
+2. **30 krátkých nezávislých řečových vzorků** od různých mluvčích (ne majitel), mono 16 kHz pokud možno.
 3. **Žádné odesílání audia mimo zařízení** (viz pravidla projektu).
 
 ## Protokol

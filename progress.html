@@ -43,8 +43,8 @@
         { "id": "F0-T04", "title": "EarService — foreground service typu microphone, ring buffer 3s, AudioRecord 16kHz", "status": "done", "completedAt": "2026-05-15", "notes": "" },
         { "id": "F0-T05", "title": "Wake-word PoC: Porcupine vs openWakeWord benchmark + ADR", "status": "done", "completedAt": "2026-05-15", "notes": "ADR docs/decisions/0001-wake-word.md; ONNX assets volitelně v assets/openwakeword/." },
         { "id": "F0-T06", "title": "Audio routing: detekce a přepnutí na BT SCO, fallback", "status": "done", "completedAt": "2026-05-15", "notes": "`AudioHandsFreeRouting` + `EarService` (VOICE_COMMUNICATION); BT přes `setCommunicationDevice`/SCO; `BLUETOOTH_CONNECT`." },
-        { "id": "F0-T07", "title": "Měření latence wake→ASR-ready na referenčním HW", "status": "blocked", "completedAt": null, "notes": "Šablona + log `HandyLatency`; stream EarService→[MonoPcmRingBuffer.consume…]→Sherpa v `HandyAssistantViewModel`, auto `noteWakeWord` na Home s demo panelem. Tabulku v `docs/benchmarks/latency.md` doplnit až na zařízení." },
-        { "id": "F0-T08", "title": "Měření spotřeby baterie idle/listening, Battery Historian export", "status": "blocked", "completedAt": null, "notes": "Postup v `docs/benchmarks/battery.md`; tabulka se vyplní měřením na zařízení (Historian / Nastavení baterie)." },
+        { "id": "F0-T07", "title": "Měření latence wake→ASR-ready na referenčním HW", "status": "blocked", "completedAt": null, "notes": "Referenční telefon: Samsung Galaxy S20 ([D-001]). Šablona + log `HandyLatency`; stream EarService→[MonoPcmRingBuffer.consume…]→Sherpa v `HandyAssistantViewModel`. Tabulku v `docs/benchmarks/latency.md` doplnit při měření na S20 (zapsat Android API / build)." },
+        { "id": "F0-T08", "title": "Měření spotřeby baterie idle/listening, Battery Historian export", "status": "blocked", "completedAt": null, "notes": "Referenční telefon: Samsung Galaxy S20 ([D-001]). Postup v `docs/benchmarks/battery.md`; tabulka po měření na S20 (Historian / Nastavení baterie)." },
         { "id": "F0-T09", "title": "Boot receiver + auto-restart služby (RECEIVE_BOOT_COMPLETED)", "status": "done", "completedAt": "2026-05-15", "notes": "`HandyBootCompletedReceiver` → `EarService.start`." },
         { "id": "F0-T10", "title": "README s návodem na build a side-load", "status": "done", "completedAt": "2026-05-15", "notes": "ADB `install -r`, lokální APK cesta; `progress.html` jako nástěnka / screenshot." }
       ]
@@ -76,8 +76,8 @@
         { "id": "F1-T19", "title": "Onboarding flow — permission grant wizard", "status": "done", "completedAt": "2026-05-15", "notes": "HandyContent + MainActivity; EarService dál přes HandyRootScreen při mic grant." },
         { "id": "F1-T20", "title": "Persistent notifikace FG service (idle/listening/processing)", "status": "done", "completedAt": "2026-05-15", "notes": "EarForegroundUiState, notify z HandyRootScreen při běžícím EarService + mic." },
         { "id": "F1-T21", "title": "Unit testy NLU patterns (≥ 90 % coverage)", "status": "done", "completedAt": "2026-05-15", "notes": "JaCoCo verification v :feature:nlu; CALL specifičtější vzor první." },
-        { "id": "F1-T22", "title": "E2E test 50 nahrávek vlastního hlasu — ≥ 90 % recognition", "status": "blocked", "completedAt": null, "notes": "Vyžaduje 50 nahraných vzorků na zařízení. Postup: `docs/benchmarks/e2e-voice-recognition.md`." },
-        { "id": "F1-T23", "title": "False-accept test 30 cizích hlasů — < 2 %", "status": "blocked", "completedAt": null, "notes": "Vyžaduje 30 cizích vzorků; žádné audio mimo zařízení. Postup: `docs/benchmarks/false-accept-voice.md`." }
+        { "id": "F1-T22", "title": "E2E test 50 nahrávek vlastního hlasu — ≥ 90 % recognition", "status": "blocked", "completedAt": null, "notes": "Referenční telefon: Samsung Galaxy S20 ([D-001]). Vyžaduje 50 nahraných vzorků na zařízení. Postup: `docs/benchmarks/e2e-voice-recognition.md`." },
+        { "id": "F1-T23", "title": "False-accept test 30 cizích hlasů — < 2 %", "status": "blocked", "completedAt": null, "notes": "Referenční telefon: Samsung Galaxy S20 ([D-001]). Vyžaduje 30 cizích vzorků; žádné audio mimo zařízení. Postup: `docs/benchmarks/false-accept-voice.md`." }
       ]
     },
     {
@@ -107,14 +107,14 @@
       "weeks": "Týdny 11–12",
       "goal": "Spolehlivý běh v reálných podmínkách, baterie ≤ 5 %/h.",
       "tasks": [
-        { "id": "F3-T01", "title": "QA matrix lockscreen — per intent: screen-on/off/locked/BT/pocket", "status": "done", "completedAt": "2026-05-15", "notes": "Šablona `docs/qa/lockscreen-matrix.md`; buňky vyplní QA na zařízení." },
+        { "id": "F3-T01", "title": "QA matrix lockscreen — per intent: screen-on/off/locked/BT/pocket", "status": "done", "completedAt": "2026-05-15", "notes": "Šablona `docs/qa/lockscreen-matrix.md`; primární QA HW Samsung Galaxy S20 ([D-001]); buňky vyplnit při testech na zařízení." },
         { "id": "F3-T02", "title": "Rozhodnutí Direct Boot support — ADR", "status": "done", "completedAt": "2026-05-15", "notes": "`docs/decisions/0005-direct-boot.md` — zatím bez Direct Boot." },
         { "id": "F3-T03", "title": "Battery profiling — Battery Historian na 8h scénáři", "status": "done", "completedAt": "2026-05-15", "notes": "8h checklist + tabulka v `docs/benchmarks/battery.md`; čísla až z HW." },
         { "id": "F3-T04", "title": "Wake-word inference každých 30 ms, CPU profiling", "status": "done", "completedAt": "2026-05-15", "notes": "`WakeWordInferenceBudget` 30 ms / 480 vzorků @16k; CPU profiling až s plnou wake smyčkou." },
         { "id": "F3-T05", "title": "Lazy load ASR/speaker modelů, unload po N min idle", "status": "done", "completedAt": "2026-05-15", "notes": "`SherpaStreamingRecognizerHolder` + `HandyAssistantViewModel`: lazy Sherpa, ECAPA už lazy v extraktoru; po 5 min bez interakce `release` + `noteWakeWordForHeavyModels()` pro wake." },
         { "id": "F3-T06", "title": "OEM whitelist onboarding screen (Xiaomi/Huawei/Samsung/OnePlus)", "status": "done", "completedAt": "2026-05-15", "notes": "`OemManufacturerHintsScreen` + nastavení; odkazy dontkillmyapp.com." },
         { "id": "F3-T07", "title": "BT SCO reconnect logic + exponential backoff", "status": "done", "completedAt": "2026-05-15", "notes": "`AudioHandsFreeRouting` device callback + řetěz reconnect." },
-        { "id": "F3-T08", "title": "Field test 1 den — telefon v kapse + BT, deník selhání", "status": "blocked", "completedAt": null, "notes": "Vyžaduje celodenní test na zařízení; šablona v lockscreen matrix / poznámky QA." }
+        { "id": "F3-T08", "title": "Field test 1 den — telefon v kapse + BT, deník selhání", "status": "blocked", "completedAt": null, "notes": "Referenční telefon: Samsung Galaxy S20 ([D-001]). Vyžaduje celodenní test; šablona v lockscreen matrix / poznámky QA." }
       ]
     },
     {
@@ -153,7 +153,7 @@
       "weeks": "Blokuje plán",
       "goal": "Odpovědi uživatele, které ovlivní directional choices.",
       "tasks": [
-        { "id": "D-001", "title": "Cílový telefon / Android verze pro PoC", "status": "pending", "completedAt": null, "notes": "" },
+        { "id": "D-001", "title": "Cílový telefon / Android verze pro PoC", "status": "done", "completedAt": "2026-05-17", "notes": "Samsung Galaxy S20 jako referenční HW pro měření F0/F1/F3 a QA matrix; přesný Android doplnit při prvním běhu do docs/benchmarks." },
         { "id": "D-002", "title": "Jazyk: CZ only nebo CZ+EN", "status": "pending", "completedAt": null, "notes": "" },
         { "id": "D-003", "title": "Wake-word: Porcupine vs openWakeWord (čeká na F0-T05 benchmark)", "status": "pending", "completedAt": null, "notes": "" },
         { "id": "D-004", "title": "Distribuce: Play Store vs sideload/F-Droid", "status": "pending", "completedAt": null, "notes": "" },

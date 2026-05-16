@@ -10,6 +10,10 @@ Lokální hlasový asistent pro Android (asistivní ovládání, biometrie hlase
 - Android SDK (API **35** platforma, build-tools **35**)
 - Projekt používá Gradle Wrapper (`./gradlew`)
 
+### Referenční HW (měření / QA)
+
+- **Samsung Galaxy S20** (`[D-001]` v `IMPLEMENTATION_PLAN.md`) — výchozí telefon pro latenci (`docs/benchmarks/latency.md`), baterii (`docs/benchmarks/battery.md`), lockscreen matrix (`docs/qa/lockscreen-matrix.md`) a field test. Přesnou verzi Androidu / One UI zapisovat při prvních měřeních do příslušných tabulek.
+
 ## Build
 
 ```bash
