@@ -2,6 +2,7 @@ plugins {
     `java-library`
     jacoco
     alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ktlint)
     alias(libs.plugins.detekt)
 }
@@ -19,6 +20,7 @@ kotlin {
 dependencies {
     implementation(project(":core:common"))
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.serialization.json)
     testImplementation(libs.kotlin.test.junit)
 }
 

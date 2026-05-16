@@ -14,8 +14,10 @@ Accepted (draft implementace řetězce, 2026-05-17)
 - **Implementace v repu (fáze 1)**:
   - Rozhraní [`UtteranceNluParser`](../feature/nlu/src/main/kotlin/cz/handy/feature/nlu/UtteranceNluParser.kt),
   - [`LlmPrimaryRuleFallbackNluEngine`](../feature/nlu/src/main/kotlin/cz/handy/feature/nlu/LlmPrimaryRuleFallbackNluEngine.kt) skládá oba vstupy,
-  - [`UnbundledLlmNluParser`](../feature/nlu/src/main/kotlin/cz/handy/feature/nlu/UnbundledLlmNluParser.kt) je zástupce vracející vždy `NoMatch`, dokud není aktivní MediaPipe řetězec a lokální váhy v assets/app storage.
-  - [`HandyAssistantViewModel`](../feature/ui/src/main/kotlin/cz/handy/feature/ui/pipeline/HandyAssistantViewModel.kt) používá tento chain — chování s prázdným LLM parserem je **identické** s výhradně pravidlovým NLU.
+  - [`UnbundledLlmNluParser`](../feature/nlu/src/main/kotlin/cz/handy/feature/nlu/UnbundledLlmNluParser.kt) je zástupce vždy `NoMatch` (zůstává pro unit testy a případné „vypnutí“ primární vrstvy).
+  - [`StructuredJsonUtteranceLlmParser`](../feature/nlu/src/main/kotlin/cz/handy/feature/nlu/StructuredJsonUtteranceLlmParser.kt): pokud vstup (např. ASR) začíná `{`, parsuje přes [`LlmNluJsonCodec`](../feature/nlu/src/main/kotlin/cz/handy/feature/nlu/LlmNluJsonCodec.kt); jinak `NoMatch` → pravidla.
+  - [`LlmNluJsonCodec`](../feature/nlu/src/main/kotlin/cz/handy/feature/nlu/LlmNluJsonCodec.kt) parsuje JSON výstup modelu na `NluResult` s validací slotů vůči [`IntentCatalog`](../feature/nlu/src/main/kotlin/cz/handy/feature/nlu/IntentCatalogDsl.kt) (bez síťového volání).
+  - [`HandyAssistantViewModel`](../feature/ui/src/main/kotlin/cz/handy/feature/ui/pipeline/HandyAssistantViewModel.kt) používá `LlmPrimaryRuleFallbackNluEngine(StructuredJsonUtteranceLlmParser, RuleBasedNluEngine)` se **stejnou** instancí [`HandyNluCatalogs.mvp`](../feature/nlu/src/main/kotlin/cz/handy/feature/nlu/HandyNluCatalogs.kt). Běžná mluvená věta → **identické** chování jako čistě pravidlové NLU; JSON řetězec v textu → primární vrstva může vrátit `Matched` dřív než pravidla.
 
 **Fáze 2** (bez data tohoto ADR automaticky nevynucená konkrétní verzí): přidání závislosti **`com.google.mediapipe:tasks-genai`** (nebo tehdy dokumentovaného ekvivalentu), lokálních vah Gemma int4 mimo repozitář, parsování kontraktu JSON → `ParsedIntent` včetně validace `intentId` proti katalogu nebo bezpečného podmnoží.
 

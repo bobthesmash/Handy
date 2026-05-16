@@ -34,6 +34,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -180,6 +182,13 @@ private fun FeedbackBody(
             DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
         }
 
+    val starsSliderContentDescription =
+        stringResource(R.string.beta_feedback_stars, stars)
+    val recordStartContentDescription =
+        stringResource(R.string.beta_feedback_record_start)
+    val recordStopContentDescription =
+        stringResource(R.string.beta_feedback_record_stop)
+
     LaunchedEffect(vmError) {
         if (!vmError.isNullOrBlank()) {
             delay(FEEDBACK_BANNER_VM_ERROR_HIDE_MS)
@@ -203,7 +212,12 @@ private fun FeedbackBody(
             valueRange = MIN_FEEDBACK_STAR.toFloat()..MAX_FEEDBACK_STAR.toFloat(),
             steps = STAR_SLIDER_STEPS,
             onValueChange = { stars = it.roundToInt().coerceIn(MIN_FEEDBACK_STAR, MAX_FEEDBACK_STAR) },
-            modifier = Modifier.fillMaxWidth(),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .semantics {
+                        contentDescription = starsSliderContentDescription
+                    },
         )
 
         Text(
@@ -232,7 +246,12 @@ private fun FeedbackBody(
                         }
                         recording = true
                     },
-                    modifier = Modifier.weight(1f),
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .semantics {
+                                contentDescription = recordStartContentDescription
+                            },
                     enabled = !transcribeBusy,
                 ) {
                     Text(stringResource(R.string.beta_feedback_record_start))
@@ -273,7 +292,12 @@ private fun FeedbackBody(
                             )
                         }
                     },
-                    modifier = Modifier.weight(1f),
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .semantics {
+                                contentDescription = recordStopContentDescription
+                            },
                     enabled = !transcribeBusy,
                 ) {
                     Text(stringResource(R.string.beta_feedback_record_stop))
@@ -327,6 +351,7 @@ private fun FeedbackBody(
                     stars = stars,
                     message = body,
                     onSuccess = {
+                        draft = ""
                         scope.launch {
                             localBanner = context.getString(R.string.beta_feedback_saved_room)
                             delay(FEEDBACK_BANNER_SAVED_HIDE_MS)

@@ -1,7 +1,8 @@
 package cz.handy.feature.nlu
 
 /**
- * Nejprve zkusí strukturovaný LLM výstup ([F5-T01]), při [NluResult.NoMatch] použije rule engine ([F1-T08]).
+ * Nejprve primární parser ([UtteranceNluParser]) — typicky [StructuredJsonUtteranceLlmParser] (JSON v textu / ASR)
+ * nebo budoucí MediaPipe výstup; při [NluResult.NoMatch] stejný vstup parsuje rule engine ([F1-T08]).
  */
 class LlmPrimaryRuleFallbackNluEngine(
     private val llm: UtteranceNluParser,

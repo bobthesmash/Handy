@@ -1,0 +1,13 @@
+## Kořenový local.properties (zkopíruj jako `local.properties`)
+
+Soubor musí ležet v **kořeni** repozitáře (vedle `settings.gradle.kts`). Android Studio ho obvykle vytvoří automaticky.
+
+**Windows (typická cesta SDK):**
+
+```properties
+sdk.dir=C\:\\Users\\YOUR_USERNAME\\AppData\\Local\\Android\\Sdk
+```
+
+Nastav cestu podle *Settings → Android SDK → Android SDK Location*. Alternativa: proměnná prostředí `ANDROID_HOME` na stejnou složku.
+
+Git: `local.properties` je v `.gitignore` — necommitovat.
