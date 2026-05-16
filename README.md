@@ -1,6 +1,6 @@
 # Handy
 
-[![CI](https://github.com/YOUR_GITHUB_USER/Handy/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_GITHUB_USER/Handy/actions/workflows/ci.yml)
+[![CI](https://github.com/bobthesmash/Handy/actions/workflows/ci.yml/badge.svg)](https://github.com/bobthesmash/Handy/actions/workflows/ci.yml)
 
 Lokální hlasový asistent pro Android (asistivní ovládání, biometrie hlasem, offline provoz). Stav vývoje: `progress.html`.
 
@@ -41,7 +41,7 @@ Soubor **`progress.html`** je lokální stavová nástěnka — otevři ho v pro
 
 ### Odznak CI
 
-Po nahrání na GitHub nahraj v tomto README `YOUR_GITHUB_USER/Handy` za skutečné `owner/repo` (odkazuje na workflow `ci.yml`).
+Soukromý remote: [`bobthesmash/Handy`](https://github.com/bobthesmash/Handy) — badge výše po prvním úspěšném běhu Actions.
 
 ### Ochrana soukromí a Play Store (F4-T04)
 
