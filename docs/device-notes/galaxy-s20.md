@@ -19,5 +19,7 @@ Stručné technické fakta související s řadou **Galaxy S20 / S20+ / S20 Ultr
 ## Odkazy v tomto repu
 
 - Obecnější odkazy k výrobcům: obrazovka `OemManufacturerHintsScreen` / dontkillmyapp (Samsung je v seznamu).
-- Latence / logcat: `docs/benchmarks/latency.md`
-- Battery Historian protokol: `docs/benchmarks/battery.md`
+- Latence / logcat: [`benchmarks/latency.md`](../benchmarks/latency.md)
+- Battery Historian protokol: [`benchmarks/battery.md`](../benchmarks/battery.md)
+- E2E vlastní hlas ([F1-T22]): [`benchmarks/e2e-voice-recognition.md`](../benchmarks/e2e-voice-recognition.md)
+- False-accept ([F1-T23]): [`benchmarks/false-accept-voice.md`](../benchmarks/false-accept-voice.md)

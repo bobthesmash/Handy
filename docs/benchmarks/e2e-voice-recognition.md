@@ -10,6 +10,8 @@
 2. Nahrané nebo živě generované **50 krátkých českých vět** pokrývajících MVP intenty (`HandyNluCatalogs.mvp`).
 3. Zapnutý speaker-verify dle ostrého nastavení (`T_high` / `T_low`).
 
+Kontext k referenčnímu Samsungu / One UI: [`../device-notes/galaxy-s20.md`](../device-notes/galaxy-s20.md).
+
 ## Protokol
 
 | # | Přepis (ground truth) | Očekávaný intent | Poznámka / pass–fail |

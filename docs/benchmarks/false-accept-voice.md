@@ -10,6 +10,8 @@ Speaker verification musí **< 2 %** vzorků klasifikovat jako **StrongAccept** 
 2. **30 krátkých nezávislých řečových vzorků** od různých mluvčích (ne majitel), mono 16 kHz pokud možno.
 3. **Žádné odesílání audia mimo zařízení** (viz pravidla projektu).
 
+Kontext k referenčnímu Samsungu / One UI: [`../device-notes/galaxy-s20.md`](../device-notes/galaxy-s20.md).
+
 ## Protokol
 
 | # | Zdroj / poznámka | Výsledek verify | Pass (měl zamítnout) |
