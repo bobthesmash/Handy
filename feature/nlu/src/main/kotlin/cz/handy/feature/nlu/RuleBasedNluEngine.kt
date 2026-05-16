@@ -8,8 +8,8 @@ import cz.handy.feature.nlu.internal.PhraseMatcherSpec
  */
 class RuleBasedNluEngine(
     private val catalog: IntentCatalog,
-) {
-    fun parse(utterance: String): NluResult {
+) : UtteranceNluParser {
+    override fun parse(utterance: String): NluResult {
         val n = IntentCatalog.normalizeUtterance(utterance)
         if (n.isBlank()) return NluResult.NoMatch
         return matchCatalog(catalog.intents, n)

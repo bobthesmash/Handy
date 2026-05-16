@@ -2,10 +2,11 @@ package cz.handy.feature.voiceid.verify
 
 import cz.handy.feature.voiceid.ecapa.SpeechbrainEcapaPreprocessor
 
-/** Uživatelsky nastavitelné mezní kosínové skóre ([F1‑T04]). */
+/** Uživatelsky nastavitelné mezní kosínové skóre ([F1‑T04]) + práh anti-spoof ([F5‑T02]). */
 data class VerificationThresholds(
     val cosineHigh: Float = DEFAULT_COSINE_HIGH,
     val cosineLow: Float = DEFAULT_COSINE_LOW,
+    val antiSpoofRejectAbove: Float = DEFAULT_ANTI_SPOOF_REJECT_ABOVE,
     val embeddingDim: Int = SpeechbrainEcapaPreprocessor.EMBEDDING_DIM,
 ) {
     init {
@@ -15,11 +16,17 @@ data class VerificationThresholds(
         require(cosineLow <= cosineHigh) {
             "T_low must be ≤ T_high (got low=$cosineLow high=$cosineHigh)."
         }
+        require(antiSpoofRejectAbove in 0f..1f) {
+            "Anti-spoof reject threshold must lie in [0,1] (P(spoof) domain)."
+        }
     }
 
     companion object {
         const val DEFAULT_COSINE_HIGH = 0.78f
         const val DEFAULT_COSINE_LOW = 0.65f
+
+        /** P(spoof) nad tímto prahem znamená zamítnutí tahu při přítomnosti `anti_spoof.onnx`. */
+        const val DEFAULT_ANTI_SPOOF_REJECT_ABOVE = 0.5f
     }
 }
 

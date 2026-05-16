@@ -15,12 +15,16 @@ import cz.handy.core.persistence.PipelineLatencyTracer
 import cz.handy.feature.actions.executor.MvpIntentExecutor
 import cz.handy.feature.asr.SherpaStreamingRecognizerHolder
 import cz.handy.feature.nlu.HandyNluCatalogs
+import cz.handy.feature.nlu.LlmPrimaryRuleFallbackNluEngine
 import cz.handy.feature.nlu.NluResult
 import cz.handy.feature.nlu.ParsedIntent
 import cz.handy.feature.nlu.RuleBasedNluEngine
+import cz.handy.feature.nlu.UnbundledLlmNluParser
 import cz.handy.feature.tts.AndroidCzechSpeechSynthesizer
 import cz.handy.feature.tts.SpeechSynthesizer
 import cz.handy.feature.ui.R
+import cz.handy.feature.voiceid.antispoof.AntiSpoofInferenceException
+import cz.handy.feature.voiceid.antispoof.AntiSpoofRejectedException
 import cz.handy.feature.voiceid.confirm.DestructiveConfirmVoiceVerifier
 import cz.handy.feature.voiceid.ecapa.SpeechbrainEcapaPreprocessor
 import cz.handy.feature.voiceid.storage.SpeakerEmbeddingEncryptedStore
@@ -55,7 +59,11 @@ class HandyAssistantViewModel(
     private val embeddingStore = SpeakerEmbeddingEncryptedStore(application)
 
     private val dialog = DialogManager()
-    private val nluEngine = RuleBasedNluEngine(HandyNluCatalogs.mvp)
+    private val nluEngine =
+        LlmPrimaryRuleFallbackNluEngine(
+            llm = UnbundledLlmNluParser,
+            rules = RuleBasedNluEngine(HandyNluCatalogs.mvp),
+        )
     private val executor = MvpIntentExecutor(application)
     private val speech: SpeechSynthesizer = AndroidCzechSpeechSynthesizer(application)
     private val destructiveVoiceConfirm = DestructiveConfirmVoiceVerifier(application)
@@ -160,11 +168,23 @@ class HandyAssistantViewModel(
                         dispatchExec(pending, destructiveSmsConfirmed = true)
                     } else {
                         pendingTurnStartElapsed = null
+                        val ex = verified.exceptionOrNull()
+                        when (ex) {
+                            is AntiSpoofRejectedException -> telemetry.recordAntiSpoofGate("reject")
+                            is AntiSpoofInferenceException -> telemetry.recordAntiSpoofGate("onnx_error")
+                            else -> {}
+                        }
+                        val app = getApplication<Application>()
                         _toastLine.value =
-                            verified.exceptionOrNull()?.message ?: "Ověření hlasu selhalo."
+                            when (ex) {
+                                is AntiSpoofRejectedException ->
+                                    app.getString(R.string.assistant_voice_gate_anti_spoof)
+                                is AntiSpoofInferenceException ->
+                                    app.getString(R.string.assistant_voice_gate_error)
+                                else -> ex?.message ?: "Ověření hlasu selhalo."
+                            }
                     }
-                }
-            } finally {
+                }            } finally {
                 withContext(Dispatchers.Main.immediate) {
                     _voiceConfirmBusy.value = false
                 }
@@ -405,7 +425,8 @@ class HandyAssistantViewModel(
     }
 
     /**
-     * ECAPA kosínová brána před NLU na PCM ze Sherpa tahu ([DualThresholdSpeakerVerifier]).
+     * Volitelný anti-spoof (`anti_spoof.onnx`) a pak ECAPA kosínová brána před NLU na PCM ze Sherpa tahu
+     * ([DualThresholdSpeakerVerifier]).
      * [VerificationVerdict.Uncertain]: stejně jako Reject z pohledu pipeline — žádný NLU; TTS žádá nový pokus (slabý signál).
      * @return `false`, pokud řetězec končí hláškou uživateli (bez NLU).
      */
@@ -429,19 +450,36 @@ class HandyAssistantViewModel(
             }
 
         if (verdictResult.isFailure) {
-            telemetry.recordSpeakerPhraseGate("onnx_error")
+            val ex = verdictResult.exceptionOrNull()
+            when (ex) {
+                is AntiSpoofRejectedException -> {
+                    telemetry.recordAntiSpoofGate("reject")
+                    telemetry.recordSpeakerPhraseGate("blocked_anti_spoof")
+                }
+
+                is AntiSpoofInferenceException -> {
+                    telemetry.recordAntiSpoofGate("onnx_error")
+                    telemetry.recordSpeakerPhraseGate("anti_spoof_onnx_error")
+                }
+
+                else -> telemetry.recordSpeakerPhraseGate("onnx_error")
+            }
             pendingTurnStartElapsed = null
             speech.stop()
             dialog.abortToIdle()
             val line =
-                verdictResult.exceptionOrNull()?.message?.takeIf { it.isNotBlank() }
-                    ?: app.getString(R.string.assistant_voice_gate_error)
+                when (ex) {
+                    is AntiSpoofRejectedException -> app.getString(R.string.assistant_voice_gate_anti_spoof)
+                    is AntiSpoofInferenceException -> app.getString(R.string.assistant_voice_gate_error)
+                    else ->
+                        ex?.message?.takeIf { it.isNotBlank() }
+                            ?: app.getString(R.string.assistant_voice_gate_error)
+                }
             lastSpokenLine = line
             _toastLine.value = line
             speech.speak(line) { }
             return false
         }
-
         return when (verdictResult.getOrThrow()) {
             VerificationVerdict.StrongAccept -> true
 

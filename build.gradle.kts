@@ -55,6 +55,10 @@ gradle.projectsEvaluated {
                     "Silero VAD ONNX",
                     "feature/voiceid/src/main/assets/voiceid/silero_vad.onnx",
                 )
+                warnMissing(
+                    "Anti-spoof ONNX (volitelný)",
+                    "feature/voiceid/src/main/assets/voiceid/anti_spoof.onnx",
+                )
                 val sherpaDir = "feature/asr/src/main/assets/asr/cs_zipformer_small"
                 listOf("tokens.txt", "encoder.onnx", "decoder.onnx", "joiner.onnx").forEach {
                     warnMissing("Sherpa zipformer «$it»", "$sherpaDir/$it")

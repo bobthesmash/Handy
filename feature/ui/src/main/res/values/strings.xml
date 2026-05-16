@@ -38,11 +38,12 @@
     <string name="enrollment_phrase_8">Děkuji, to je všechno, co potřebuji právě teď říct.</string>
     <string name="debug_verify_title">Ladění ověření hlasu</string>
     <string name="debug_verify_nav_back">Zpět</string>
-    <string name="debug_verify_intro">Prah kosínové podobnosti (L2 embeddingy). Mezi T_low a T_high je nejistá zóna — potvrzení v dalších úkolech.</string>
+    <string name="debug_verify_intro">Prah kosínové podobnosti (L2 embeddingy). Mezi T_low a T_high je nejistá zóna — potvrzení v dalších úkolech. Anti-spoof: maximální P(spoof), nad kterým se nepustí ECAPA při nahraném `anti_spoof.onnx`.</string>
     <string name="debug_verify_t_high">T_high (silné přijetí): %1$.3f</string>
     <string name="debug_verify_t_low">T_low (odmítnutí pod): %1$.3f</string>
+    <string name="debug_verify_anti_spoof">Anti-spoof: zamítnout při P(spoof) nad %1$.3f (když je ONNX v assets)</string>
     <string name="debug_verify_apply">Uložit prahy</string>
-    <string name="debug_verify_reset_defaults">Obnovit výchozí (0,78 / 0,65)</string>
+    <string name="debug_verify_reset_defaults">Obnovit výchozí (kosinus 0,78 / 0,65, anti-spoof 0,50)</string>
     <string name="open_debug_verify">Ladící prahy</string>
     <string name="command_demo_title">MVP řetězec (nahrazuje ASR dokud nepřejde mikro‑buffer)</string>
     <string name="command_demo_phase">Fáze dialogu: %1$s</string>
@@ -54,6 +55,7 @@
     <string name="assistant_voice_rejected">Tenhle příkaz nepřijímám od neznámého hlasu.</string>
     <string name="assistant_voice_gate_audio_short">Ještě nemám dost audia na ověření hlasu — zopakuj celou větu.</string>
     <string name="assistant_voice_gate_error">Ověření hlasu selhalo — zkus to znovu.</string>
+    <string name="assistant_voice_gate_anti_spoof">Ověření zablokováno kvůli možnému přehranému nebo syntetickému vstupu. Zkus to znovu živým hlasem.</string>
     <string name="command_confirm_title">Potvrdit destruktivní akci</string>
     <string name="command_confirm_voice_hint">Řekni krátkou větu stejným hlasem jako při zápisu; teprve kosínové skóre ≥ T_high akci provede.</string>
     <string name="command_confirm_record_start">Nahrát potvrzení</string>

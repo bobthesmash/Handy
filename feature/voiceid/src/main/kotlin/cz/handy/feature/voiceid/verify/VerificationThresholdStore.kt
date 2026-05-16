@@ -33,6 +33,7 @@ class VerificationThresholdStore(
             VerificationThresholds(
                 cosineHigh = VerificationThresholds.DEFAULT_COSINE_HIGH,
                 cosineLow = VerificationThresholds.DEFAULT_COSINE_LOW,
+                antiSpoofRejectAbove = VerificationThresholds.DEFAULT_ANTI_SPOOF_REJECT_ABOVE,
             )
         writeInternal(d)
         _thresholds.value = d
@@ -42,6 +43,11 @@ class VerificationThresholdStore(
         VerificationThresholds(
             cosineHigh = prefs.getFloat(KEY_HIGH, VerificationThresholds.DEFAULT_COSINE_HIGH),
             cosineLow = prefs.getFloat(KEY_LOW, VerificationThresholds.DEFAULT_COSINE_LOW),
+            antiSpoofRejectAbove =
+                prefs.getFloat(
+                    KEY_ANTI_SPOOF,
+                    VerificationThresholds.DEFAULT_ANTI_SPOOF_REJECT_ABOVE,
+                ),
         )
 
     private fun writeInternal(t: VerificationThresholds) {
@@ -49,6 +55,7 @@ class VerificationThresholdStore(
             .edit()
             .putFloat(KEY_HIGH, t.cosineHigh)
             .putFloat(KEY_LOW, t.cosineLow)
+            .putFloat(KEY_ANTI_SPOOF, t.antiSpoofRejectAbove)
             .apply()
     }
 
@@ -56,5 +63,6 @@ class VerificationThresholdStore(
         const val PREFS_NAME = "handy_voice_verify_debug"
         const val KEY_HIGH = "cosine_t_high"
         const val KEY_LOW = "cosine_t_low"
+        const val KEY_ANTI_SPOOF = "anti_spoof_reject_above"
     }
 }

@@ -1,6 +1,7 @@
 package cz.handy.feature.voiceid.confirm
 
 import android.content.Context
+import cz.handy.feature.voiceid.antispoof.AntiSpoofOnnxClassifier
 import cz.handy.feature.voiceid.ecapa.EcapaOnnxSpeakerEmbeddingExtractor
 import cz.handy.feature.voiceid.storage.SpeakerEmbeddingEncryptedStore
 import cz.handy.feature.voiceid.verify.DualThresholdSpeakerVerifier
@@ -9,7 +10,8 @@ import cz.handy.feature.voiceid.verify.VerificationVerdict
 import java.util.Locale
 
 /**
- * Druhý krok u destruktivních intentů ([F1-T16]): nová utterance musí dát **≥ T_high** vůči uloženému embeddingu.
+ * Po nepovinné anti-spoof bráně (`anti_spoof.onnx`) druhý krok u destruktivních intentů ([F1-T16]):
+ * nová utterance musí dát **≥ T_high** vůči uloženému embeddingu.
  */
 class DestructiveConfirmVoiceVerifier(
     context: Context,
@@ -17,7 +19,10 @@ class DestructiveConfirmVoiceVerifier(
     private val thresholdStore: VerificationThresholdStore = VerificationThresholdStore(context),
     private val extractor: EcapaOnnxSpeakerEmbeddingExtractor = EcapaOnnxSpeakerEmbeddingExtractor(context),
 ) {
+    private val antiSpoof = AntiSpoofOnnxClassifier(context, thresholdStore)
+
     fun releaseOnnxResources() {
+        antiSpoof.releaseSession()
         extractor.releaseSession()
     }
 
@@ -25,6 +30,9 @@ class DestructiveConfirmVoiceVerifier(
      * Kosínový embedding tahu proti uloženému centroidu — bez mapování na výsledek SMS ([DualThresholdSpeakerVerifier]).
      */
     fun evaluateTurnAgainstStoredProfile(pcmMono16Le: ShortArray): Result<VerificationVerdict> {
+        antiSpoof.gateBeforeSpeakerVerify(pcmMono16Le).getOrElse {
+            return Result.failure(it)
+        }
         val ref =
             embeddingStore.peekSynchronized()
                 ?: return Result.failure(
@@ -45,6 +53,9 @@ class DestructiveConfirmVoiceVerifier(
      * @param pcmMono16Le vzorky z Enrollment / stejný formát jako [EcapaOnnxSpeakerEmbeddingExtractor.embedPcm16].
      */
     fun verifyDestructiveConfirmUtterance(pcmMono16Le: ShortArray): Result<Unit> {
+        antiSpoof.gateBeforeSpeakerVerify(pcmMono16Le).getOrElse {
+            return Result.failure(it)
+        }
         val ref =
             embeddingStore.peekSynchronized()
                 ?: return Result.failure(

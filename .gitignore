@@ -1,5 +1,6 @@
 # Android / Gradle
 .gradle/
+.gradle-handoff/
 gradle-tmp-dist/
 **/build/
 .idea/

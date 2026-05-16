@@ -60,6 +60,16 @@ class HandyLocalTelemetry(
         )
     }
 
+    /** Lokální výsledek ONNX anti-spoof brány před ECAPA (`anti_spoof.onnx`). */
+    fun recordAntiSpoofGate(outcome: String) {
+        append(
+            JSONObject()
+                .put("tWall", System.currentTimeMillis())
+                .put("kind", "anti_spoof_gate")
+                .put("outcome", outcome),
+        )
+    }
+
     fun recordFalseWakeTrigger(reason: String) {
         append(
             JSONObject()

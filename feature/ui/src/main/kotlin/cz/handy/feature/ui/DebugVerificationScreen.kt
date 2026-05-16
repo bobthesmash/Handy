@@ -49,9 +49,12 @@ fun DebugVerificationScreen(
     var tHigh by remember { mutableFloatStateOf(persisted.cosineHigh) }
     var tLow by remember { mutableFloatStateOf(persisted.cosineLow) }
 
-    LaunchedEffect(persisted.cosineHigh, persisted.cosineLow) {
+    var tAntiSpoof by remember { mutableFloatStateOf(persisted.antiSpoofRejectAbove) }
+
+    LaunchedEffect(persisted.cosineHigh, persisted.cosineLow, persisted.antiSpoofRejectAbove) {
         tHigh = persisted.cosineHigh
         tLow = persisted.cosineLow
+        tAntiSpoof = persisted.antiSpoofRejectAbove
     }
 
     Column(modifier.fillMaxWidth()) {
@@ -91,10 +94,26 @@ fun DebugVerificationScreen(
                 },
                 valueRange = -1f..1f,
             )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = stringResource(R.string.debug_verify_anti_spoof, tAntiSpoof),
+                style = MaterialTheme.typography.titleSmall,
+            )
+            Slider(
+                value = tAntiSpoof,
+                onValueChange = { v -> tAntiSpoof = v.coerceIn(0f, 1f) },
+                valueRange = 0f..1f,
+            )
             Spacer(Modifier.height(20.dp))
             Button(
                 onClick = {
-                    store.update { VerificationThresholds(cosineHigh = tHigh, cosineLow = tLow) }
+                    store.update {
+                        VerificationThresholds(
+                            cosineHigh = tHigh,
+                            cosineLow = tLow,
+                            antiSpoofRejectAbove = tAntiSpoof,
+                        )
+                    }
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) {
