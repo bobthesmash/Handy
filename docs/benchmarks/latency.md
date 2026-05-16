@@ -8,6 +8,8 @@
 
 **Samsung Galaxy S20** (regionálně SM-G980x / Exynos nebo Snapdragon podle SKU). Při prvním měření dopiš do tabulky níže přesný **Android / API level**, **One UI** (pokud je uvedeno v „O telefonu“) a **build číslo**.
 
+Další poznámky k One UI / baterii / keyguardu: [`docs/device-notes/galaxy-s20.md`](../device-notes/galaxy-s20.md).
+
 Šablona měření pro referenční telefon.
 
 ## Wake-word → ASR-ready (cíl F0 Definition of Done: ≤ 700 ms)

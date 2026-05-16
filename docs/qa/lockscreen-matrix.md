@@ -4,7 +4,7 @@
 
 Symbol **⬜** znamená **ještě neprovedeno** — ne úspěch. Dokud buňky neobsahují explicitní **OK** / **FAIL** + poznámku z reálného zařízení, **Definition of Done F3** („všechny intenty otestované na matrix“) není splněná jen existencí tohoto souboru. Šablona dokumentu je artefakt úkolu `[F3-T01]` v changelogu; vyplnění matrix je samostatný QA běh (viz též `[F3-T08]` — field test).
 
-**Primární QA telefon (`[D-001]`):** Samsung Galaxy S20 — One UI často mění chování na keyguardu a přístup k oznámením; do poznámek u FAIL zapisovat SKU (Exynos vs Snapdragon), pokud je podezření na rozdíl.
+**Primární QA telefon (`[D-001]`):** Samsung Galaxy S20 — One UI často mění chování na keyguardu a přístup k oznámením; do poznámek u FAIL zapisovat SKU (Exynos vs Snapdragon), pokud je podezření na rozdíl. Kontext: [`docs/device-notes/galaxy-s20.md`](../device-notes/galaxy-s20.md).
 
 Šablona pro ruční QA na fyzickém zařízení. Pro každou buňku nahradit ⬜ textem **OK** nebo **FAIL** a krátkou poznámkou (log, OEM, build).
 
