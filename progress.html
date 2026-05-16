@@ -138,7 +138,7 @@
       "weeks": "Po beta",
       "goal": "Rozšíření kvality a dostupnosti.",
       "tasks": [
-        { "id": "F5-T01", "title": "NLU v2: Gemma-2B int4 přes MediaPipe LLM Inference", "status": "pending", "completedAt": null, "notes": "`LlmPrimaryRuleFallbackNluEngine` + stub `UnbundledLlmNluParser`; `HandyAssistantViewModel` používá chain (aktuálně chování = jen pravidla). ADR `docs/decisions/0008-nlu-v2-llm-primary-rules-fallback.md`. Další krok: `tasks-genai` + Gemma int4 lokálně + strukturovaný výstup → `ParsedIntent`." },
+        { "id": "F5-T01", "title": "NLU v2: Gemma-2B int4 přes MediaPipe LLM Inference", "status": "pending", "completedAt": null, "notes": "`LlmPrimaryRuleFallbackNluEngine` + `StructuredJsonUtteranceLlmParser` (ASR začínající `{` → `LlmNluJsonCodec` + MVP katalog); běžná řeč → pravidla. Stub `UnbundledLlmNluParser` jen testy. ADR `docs/decisions/0008-nlu-v2-llm-primary-rules-fallback.md`. Další krok: MediaPipe `tasks-genai` + Gemma int4 — generovat JSON z přirozené věty uvnitř primárního parseru." },
         { "id": "F5-T02", "title": "Anti-spoofing (RawNet2 / AASIST ONNX)", "status": "pending", "completedAt": null, "notes": "Brána v kódu (`AntiSpoofOnnxClassifier`), napojení v `DestructiveConfirmVoiceVerifier` + řetěz před NLU; ADR `docs/decisions/0007-anti-spoofing-onnx.md`. ONNX `anti_spoof.onnx` mimo repo; kalibrace prahů a replay/TTS měření na HW." },
         { "id": "F5-T03", "title": "Multi-jazyk: EN model, switch podle wake-word", "status": "pending", "completedAt": null, "notes": "" },
         { "id": "F5-T04", "title": "Piper TTS pro plně offline CZ hlas", "status": "pending", "completedAt": null, "notes": "" },

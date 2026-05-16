@@ -19,7 +19,7 @@ import cz.handy.feature.nlu.LlmPrimaryRuleFallbackNluEngine
 import cz.handy.feature.nlu.NluResult
 import cz.handy.feature.nlu.ParsedIntent
 import cz.handy.feature.nlu.RuleBasedNluEngine
-import cz.handy.feature.nlu.UnbundledLlmNluParser
+import cz.handy.feature.nlu.StructuredJsonUtteranceLlmParser
 import cz.handy.feature.tts.AndroidCzechSpeechSynthesizer
 import cz.handy.feature.tts.SpeechSynthesizer
 import cz.handy.feature.ui.R
@@ -59,10 +59,11 @@ class HandyAssistantViewModel(
     private val embeddingStore = SpeakerEmbeddingEncryptedStore(application)
 
     private val dialog = DialogManager()
+    private val intentCatalog = HandyNluCatalogs.mvp
     private val nluEngine =
         LlmPrimaryRuleFallbackNluEngine(
-            llm = UnbundledLlmNluParser,
-            rules = RuleBasedNluEngine(HandyNluCatalogs.mvp),
+            llm = StructuredJsonUtteranceLlmParser(intentCatalog),
+            rules = RuleBasedNluEngine(intentCatalog),
         )
     private val executor = MvpIntentExecutor(application)
     private val speech: SpeechSynthesizer = AndroidCzechSpeechSynthesizer(application)
@@ -184,7 +185,8 @@ class HandyAssistantViewModel(
                                 else -> ex?.message ?: "Ověření hlasu selhalo."
                             }
                     }
-                }            } finally {
+                }
+            } finally {
                 withContext(Dispatchers.Main.immediate) {
                     _voiceConfirmBusy.value = false
                 }

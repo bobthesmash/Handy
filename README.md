@@ -9,6 +9,7 @@ Lokální hlasový asistent pro Android (asistivní ovládání, biometrie hlase
 - JDK **17+**
 - Android SDK (API **35** platforma, build-tools **35**)
 - Projekt používá Gradle Wrapper (`./gradlew`)
+- V kořeni repozitáře musí být `local.properties` s `sdk.dir=…` (šablona: [`local.properties.example`](./local.properties.example)) nebo nastavené `ANDROID_HOME`.
 
 ### Referenční HW (měření / QA)
 

@@ -62,7 +62,8 @@ object PorcupineEarWakePump {
         sensitivity: Float,
     ): Porcupine? =
         try {
-            Porcupine.Builder()
+            Porcupine
+                .Builder()
                 .setAccessKey(accessKey)
                 .setKeyword(Porcupine.BuiltInKeyword.PORCUPINE)
                 .setSensitivity(sensitivity)

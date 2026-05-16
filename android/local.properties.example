@@ -1,7 +1,7 @@
 ## local.properties template
 
 Android Studio obvykle tento soubor vytvoří automaticky při prvním otevření projektu.
-Pokud ne, zkopírujte níže do souboru `android/local.properties` vedle `settings.gradle.kts`.
+Pokud ne, zkopírujte níže do souboru **`local.properties` v kořeni monorepa** (vedle `settings.gradle.kts`), viz též `../local.properties.example`.
 
 **Windows:**
 

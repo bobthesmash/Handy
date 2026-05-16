@@ -4,6 +4,8 @@ import cz.handy.feature.nlu.internal.IntentDefinition
 import cz.handy.feature.nlu.internal.PhraseTemplateCompiler
 import java.util.Locale
 
+private val SLOT_LOCALE_CS = Locale.forLanguageTag("cs-CZ")
+
 /** Neměnný katalog definovaný přes [intentCatalog]. */
 class IntentCatalog internal constructor(
     internal val intents: List<IntentDefinition>,
@@ -23,10 +25,27 @@ class IntentCatalog internal constructor(
         }
     }
 
-    companion object {
-        private val CS = Locale.forLanguageTag("cs-CZ")
+    /**
+     * Oříznutí a validace slotů z LLM JSON ([`F5-T01`]) podle [IntentDefinition.slotOk].
+     * Neočekávané klíče se vyhodí; hodnoty a názvy slotů se trimují a klíče lowercase (cs-CZ).
+     */
+    fun llmSlotMapOrNull(
+        intentId: String,
+        rawSlots: Map<String, String>,
+    ): Map<String, String>? {
+        val def = intents.firstOrNull { it.id == intentId } ?: return null
+        val normalized =
+            rawSlots
+                .mapKeys { (k, _) -> k.trim().lowercase(SLOT_LOCALE_CS) }
+                .mapValues { (_, v) -> v.trim() }
+        val filtered = normalized.filterKeys { it in def.slotRequired.keys }
+        return if (def.slotOk(filtered)) filtered else null
+    }
 
-        internal fun normalizeUtterance(utterance: String): String = utterance.trim().lowercase(CS).replace(Regex("\\s+"), " ")
+    fun requiresConfirmForIntent(intentId: String): Boolean? = intents.firstOrNull { it.id == intentId }?.requiresConfirm
+
+    companion object {
+        internal fun normalizeUtterance(utterance: String): String = utterance.trim().lowercase(SLOT_LOCALE_CS).replace(Regex("\\s+"), " ")
     }
 }
 
@@ -52,8 +71,6 @@ class IntentCatalogBuilder {
 
 fun intentCatalog(init: IntentCatalogBuilder.() -> Unit): IntentCatalog = IntentCatalogBuilder().apply(init).build()
 
-private val SPEC_LOCALE = Locale.forLanguageTag("cs-CZ")
-
 class IntentSpec internal constructor(
     private val id: String,
     private val requiresConfirm: Boolean,
@@ -73,7 +90,7 @@ class IntentSpec internal constructor(
         name: String,
         configure: SlotBuilder.() -> Unit = {},
     ) {
-        val key = name.trim().lowercase(SPEC_LOCALE)
+        val key = name.trim().lowercase(SLOT_LOCALE_CS)
         require(key.isNotBlank()) { "Název slotu nesmí být prázdný." }
         val b = SlotBuilder().apply(configure)
         declaredSlots[key] = b.required
