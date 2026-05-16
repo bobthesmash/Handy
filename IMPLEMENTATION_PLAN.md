@@ -166,7 +166,7 @@ Soubory `docs/benchmarks/latency.md`, `docs/benchmarks/battery.md`, `docs/qa/loc
 
 ## Otevřená rozhodnutí (uživatel musí zodpovědět)
 
-- [x] **[D-001]** Referenční zařízení pro PoC měření a QA: **Samsung Galaxy S20** (regionálně SM-G980x); přesný Android API / security patch doplnit při prvním měření do `docs/benchmarks/latency.md` a `battery.md`
+- [x] **[D-001]** Referenční zařízení pro PoC měření a QA: **Samsung Galaxy S20** řada (v zařízení typicky **SM-G98x** podle submodelu/regionu). Přehled OEM bez předpisů: `docs/device-notes/galaxy-s20.md`; čísla latence/baterie do `docs/benchmarks/latency.md` a `battery.md`
 - [ ] **[D-002]** Jazyk: jen CZ, nebo CZ+EN?
 - [ ] **[D-003]** Wake-word: Porcupine vs openWakeWord (rozhodne `[F0-T05]` benchmark + uživatel)
 - [ ] **[D-004]** Distribuce: Play Store (znamená sensitive permission review) vs sideload/F-Droid
