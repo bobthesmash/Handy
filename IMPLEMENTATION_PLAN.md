@@ -166,15 +166,15 @@ Soubory `docs/benchmarks/latency.md`, `docs/benchmarks/battery.md`, `docs/qa/loc
 
 ---
 
-## Otevřená rozhodnutí (uživatel musí zodpovědět)
+## Rozhodnutí produktu (`D-*`)
 
 - [x] **[D-001]** Referenční zařízení pro PoC měření a QA: **Samsung Galaxy S20** řada (v zařízení typicky **SM-G98x** podle submodelu/regionu). Přehled OEM: `docs/device-notes/galaxy-s20.md`; rejstřík adresáře: `docs/device-notes/README.md`; latenci a baterii evidují měřící šablony v `docs/benchmarks/latency.md` a `battery.md`.
-- [ ] **[D-002]** Jazyk: jen CZ, nebo CZ+EN?
-- [ ] **[D-003]** Wake-word: Porcupine vs openWakeWord (rozhodne `[F0-T05]` benchmark + uživatel)
-- [ ] **[D-004]** Distribuce: Play Store (znamená sensitive permission review) vs sideload/F-Droid
-- [ ] **[D-005]** TTS: Google CZ vs Piper offline (větší APK)
-- [ ] **[D-006]** Anti-spoofing už v MVP nebo až v `F5`?
-- [ ] **[D-007]** Účast cílového uživatele v alfa testech od které fáze?
+- [x] **[D-002]** Jazyk v1: **primárně CZ (cs-CZ)**; CZ+EN až `[F5-T03]` po rozšíření assetů a QA — viz [ADR-0009](./docs/decisions/0009-product-direction-defaults.md).
+- [x] **[D-003]** Wake word v1: **Porcupine** jako výchozí produkce; openWakeWord experiment dle [ADR-0001](./docs/decisions/0001-wake-word.md); měření na HW doplňuje benchmark, ne mění offline pravidla — viz [ADR-0009](./docs/decisions/0009-product-direction-defaults.md).
+- [x] **[D-004]** Distribuce: **sideload primárně** (`README.md`); Play Store jako cíl po beta + permission review; F-Droid `[F5-T07]` — viz [ADR-0009](./docs/decisions/0009-product-direction-defaults.md).
+- [x] **[D-005]** TTS v1: **Google / Android český TTS**; Piper offline `[F5-T04]` — viz [ADR-0009](./docs/decisions/0009-product-direction-defaults.md).
+- [x] **[D-006]** Anti-spoofing: **až F5** (`[F5-T02]`, ADR-0007); MVP ECAPA + confirm gate — viz [ADR-0009](./docs/decisions/0009-product-direction-defaults.md).
+- [x] **[D-007]** Účast cílového uživatele: **od F4 (beta)**, ne povinně pro PoC/F1–F3 — viz [ADR-0009](./docs/decisions/0009-product-direction-defaults.md).
 
 ---
 
@@ -183,6 +183,7 @@ Soubory `docs/benchmarks/latency.md`, `docs/benchmarks/battery.md`, `docs/qa/loc
 > Agent workery sem přidávají řádky podle pořadí dokončení. Formát: `YYYY-MM-DD  [ID]  Krátký popis  (worker: <jméno/handle>)`.
 
 ```
+2026-05-17  [D-002–D-007]  ADR `docs/decisions/0009-product-direction-defaults.md` — výchozí směr v1 (CZ, Porcupine, sideload→Play, Google CZ TTS, anti-spoof F5, beta účast od F4).  (worker: Cursor agent)
 2026-05-17  [D-001]  Referenční HW pro měření F0/F3 a QA matrix: Samsung Galaxy S20; odkázáno v README + benchmark šablonách + `progress.html`.  (worker: Cursor agent)
 2026-05-17  [F4-T04]  Play Data safety podklad: řádek verze (`AppVersionFooterText`) — volitelný dlouhý stisk → systémová schránka, vlastní vývojář aplikaci data z toho neodesílá.  (worker: Cursor agent)
 2026-05-17  [F4-T04]  Privacy policy v1.2: dlouhé klepnutí řádek verze → systémová schránka (uživatelské gesto, bez auto-odesílání); tabulka + shrnutí CS/EN; sync `docs/legal/` + `res/raw/`.  (worker: Cursor agent)

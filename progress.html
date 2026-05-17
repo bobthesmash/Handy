@@ -128,8 +128,8 @@
         { "id": "F4-T03", "title": "Backup/restore profilu (zaheslovaný balík)", "status": "done", "completedAt": "2026-05-15", "notes": "`HandyProfileBackup` AES-GCM + PBKDF2; JSON embeddingB64 + aliasy + embedding_versions; Nastavení → export/import přes SAF; `ProfileBackupCoordinator`; `EmbeddingFloatCodec` v `:core:common`." },
         { "id": "F4-T04", "title": "Privacy policy CZ+EN, permissions declaration form", "status": "done", "completedAt": "2026-05-15", "notes": "Markdown `docs/legal/`; Play **`play-store-data-safety.md`**; `PrivacyPolicyScreen` + raw; Nastavení → soukromí; `RootRoute.Privacy`. Policy **v1.2** (2026-05-17): řádek verze — dlouhé klepnutí → schránka; tabulky CS/EN; sync docs + `res/raw/`. Podklad Play: řádek verze + schránka (gesto uživatele)." },
         { "id": "F4-T05", "title": "Crash reporting — ADR (lokální vs opt-in Sentry)", "status": "done", "completedAt": "2026-05-15", "notes": "ADR `docs/decisions/0006-crash-reporting.md` (opravená čísla série oproti 0003=VAD). Default bez cloudu; možná budoucí opt-in s redakcí." },
-        { "id": "F4-T06", "title": "Beta s 3–5 reálnými uživateli + hlasový feedback formulář", "status": "pending", "completedAt": null, "notes": "`BetaFeedbackScreen` + Room; offline Sherpa přepis + `ACTION_SEND`. Nové řádky beta zpětné vazby jdou šifrovaně v `.handy` (`HandyProfilePlainV1.betaFeedback`); zálohy bez tohoto klíče při importu beta tab nesahají. Nad patičkou soukromí i řádek verze buildu (`AppVersionFooter`); sdílený text navíc přikládá tutéž verzi před závěrečnou větu patičky sdílení. Při uložení zpětné vazby zapisuje `HandyLocalTelemetry` (jen pokud je lokální telemetrie zapnutá) NDJSON řádek `beta_feedback_saved` s počtem hvězd — bez textu zprávy. Testerů 3–5 pořád jen na zařízení." },
-        { "id": "F4-T07", "title": "Iterace na základě beta feedbacku, RC", "status": "pending", "completedAt": null, "notes": "RC: řádek verze (`AppVersionFooterText`, PackageManager). Dlouhý stisk řádku zkopíruje text do schránky + Toast; pro TalkBack je doplněný `contentDescription` s návodem. Beta feedback obrazovka stejnou patičku." }
+        { "id": "F4-T06", "title": "Beta s 3–5 reálnými uživateli + hlasový feedback formulář", "status": "blocked", "completedAt": null, "notes": "Kód hotový: `BetaFeedbackScreen`, Room, offline Sherpa přepis + `ACTION_SEND`, beta řádky v `.handy`. **Zbývá jen tvoje akce:** nasadit 3–5 testerů na vlastním HW a sebrat feedback; počet hvězd volitelně v NDJSON jen při zapnuté lokální telemetrii (bez textu zprávy)." },
+        { "id": "F4-T07", "title": "Iterace na základě beta feedbacku, RC", "status": "blocked", "completedAt": null, "notes": "**Zbývá jen tvoje akce:** po beta cyklu (F4-T06) bugfix iterace + označení RC (tag/branch). Verze: `AppVersionFooterText` / dlouhý stisk → schránka." }
       ]
     },
     {
@@ -149,17 +149,17 @@
     },
     {
       "id": "D",
-      "title": "Otevřená rozhodnutí",
+      "title": "Rozhodnutí produktu",
       "weeks": "Blokuje plán",
-      "goal": "Odpovědi uživatele, které ovlivní directional choices.",
+      "goal": "Směr v1 zapsán v ADR-0009; benchmark na HW doplňuje čísla, nemění offline pravidla.",
       "tasks": [
         { "id": "D-001", "title": "Cílový telefon / Android verze pro PoC", "status": "done", "completedAt": "2026-05-17", "notes": "Samsung Galaxy S20 řada [D-001]; poznámky `docs/device-notes/galaxy-s20.md`; rejstřík `docs/device-notes/README.md`; čísla a QA v docs/benchmarks + lockscreen matrix." },
-        { "id": "D-002", "title": "Jazyk: CZ only nebo CZ+EN", "status": "pending", "completedAt": null, "notes": "" },
-        { "id": "D-003", "title": "Wake-word: Porcupine vs openWakeWord (čeká na F0-T05 benchmark)", "status": "pending", "completedAt": null, "notes": "" },
-        { "id": "D-004", "title": "Distribuce: Play Store vs sideload/F-Droid", "status": "pending", "completedAt": null, "notes": "" },
-        { "id": "D-005", "title": "TTS: Google CZ vs Piper offline", "status": "pending", "completedAt": null, "notes": "" },
-        { "id": "D-006", "title": "Anti-spoofing už v MVP nebo až F5?", "status": "pending", "completedAt": null, "notes": "" },
-        { "id": "D-007", "title": "Účast cílového uživatele v alfa testech od které fáze?", "status": "pending", "completedAt": null, "notes": "" }
+        { "id": "D-002", "title": "Jazyk: CZ only nebo CZ+EN", "status": "done", "completedAt": "2026-05-17", "notes": "ADR `docs/decisions/0009-product-direction-defaults.md`: v1 primárně CZ (cs-CZ); EN / přepínání až `[F5-T03]`." },
+        { "id": "D-003", "title": "Wake-word: Porcupine vs openWakeWord (čeká na F0-T05 benchmark)", "status": "done", "completedAt": "2026-05-17", "notes": "ADR-0009 + ADR-0001: výchozí produkce Porcupine; openWakeWord experiment/benchmark; měření na S20 doplňuje tabulky." },
+        { "id": "D-004", "title": "Distribuce: Play Store vs sideload/F-Droid", "status": "done", "completedAt": "2026-05-17", "notes": "ADR-0009: primárně sideload (`README.md`); Play po beta + permission review; F-Droid `[F5-T07]`." },
+        { "id": "D-005", "title": "TTS: Google CZ vs Piper offline", "status": "done", "completedAt": "2026-05-17", "notes": "ADR-0009: Android/Google český TTS v1 (`AndroidCzechSpeechSynthesizer`); Piper `[F5-T04]`." },
+        { "id": "D-006", "title": "Anti-spoofing už v MVP nebo až F5?", "status": "done", "completedAt": "2026-05-17", "notes": "ADR-0009 + ADR-0007: anti-spoof až F5; MVP ECAPA + confirm gate." },
+        { "id": "D-007", "title": "Účast cílového uživatele v alfa testech od které fáze?", "status": "done", "completedAt": "2026-05-17", "notes": "ADR-0009: cílový uživatel od F4 (beta); PoC/F1–F3 bez povinné účasti." }
       ]
     }
   ]
