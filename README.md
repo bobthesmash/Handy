@@ -78,6 +78,15 @@ Soukromý remote: [`bobthesmash/Handy`](https://github.com/bobthesmash/Handy) �
 
 - **`feature/voiceid/src/main/assets/voiceid/`** — **`README.txt`**: `ecapa_embedding.onnx` a `silero_vad.onnx` (Silero VAD v5 ONNX pro segmentaci řeči); oba záměrně mimo git kvůli velikosti. ADR `docs/decisions/0002-ecapa-speaker-onnx.md`, `docs/decisions/0003-silero-vad-onnx.md`.
 
+**Jedním příkazem (Windows, Python 3 + pip):**
+
+```bash
+./gradlew downloadHandyOnnxDevAssets
+# nebo: powershell -ExecutionPolicy Bypass -File scripts/download-handy-onnx-assets.ps1
+```
+
+ASR pro češtinu: **`asr/vosk_cs_small/`** (Vosk Rhasspy small) — stáhne `downloadHandyOnnxDevAssets`. Složka `asr/cs_zipformer_small/` je jen záložní Sherpa zipformer (dříve RU placeholder).
+
 ### ASR (Sherpa‑onnx streaming)
 
 - **JNI / Java API**: `com.xdcobra.sherpa:sherpa-onnx` — verze alias **`sherpaOnnx`** v **`gradle/libs.versions.toml`** (Maven `https://xdcobra.github.io/maven`, jen skupina `com.xdcobra.sherpa`; viz **`docs/decisions/0004-sherpa-onnx-android-asr.md`**).

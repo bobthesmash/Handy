@@ -3,6 +3,24 @@
 .gradle-handoff/
 gradle-tmp-dist/
 **/build/
+# Python deps for scripts/export_ecapa_embedding_onnx.py (on D: when C: is full)
+/build/python-deps/
+/build/pip-cache/
+/build/tmp/
+/build/speechbrain-spkrec-ecapa-voxceleb/
+/build/hf-cache/
+
+# Large ONNX in assets (fetch via downloadHandyOnnxDevAssets)
+feature/asr/src/main/assets/**/*.onnx
+feature/voiceid/src/main/assets/**/*.onnx
+# Vosk / Sherpa ASR trees (scripts/download-handy-onnx-assets.ps1)
+feature/asr/src/main/assets/asr/vosk_cs_small/**
+!feature/asr/src/main/assets/asr/vosk_cs_small/README.txt
+feature/asr/src/main/assets/asr/cs_zipformer_small/**
+!feature/asr/src/main/assets/asr/cs_zipformer_small/README.txt
+
+# Prebuilt APK kit (build locally)
+Android apk/apk/
 .idea/
 *.iml
 *.hprof

@@ -12,7 +12,8 @@ class BundledOnnxBundleHealthTest {
             BundledOnnxBundleHealth.gaps(
                 ecapaBundled = true,
                 sileroBundled = true,
-                sherpaBundled = true,
+                voskCsBundled = true,
+                sherpaBundled = false,
             ),
         )
     }
@@ -23,13 +24,13 @@ class BundledOnnxBundleHealthTest {
             setOf(
                 OnnxBundleGap.ECAPA_EMBEDDING,
                 OnnxBundleGap.SILERO_VAD,
-                OnnxBundleGap.SHERPA_ZIPFORMER,
+                OnnxBundleGap.VOSK_CS,
             ),
-            BundledOnnxBundleHealth.gaps(false, false, false),
+            BundledOnnxBundleHealth.gaps(false, false, false, false),
         )
         assertEquals(
-            setOf(OnnxBundleGap.SHERPA_ZIPFORMER),
-            BundledOnnxBundleHealth.gaps(true, true, false),
+            emptySet(),
+            BundledOnnxBundleHealth.gaps(true, true, false, true),
         )
     }
 

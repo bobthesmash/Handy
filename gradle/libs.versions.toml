@@ -16,6 +16,7 @@ porcupine = "4.0.0"
 openWakeWordAndroid = "0.1.5"
 onnxRuntime = "1.20.0"
 sherpaOnnx = "1.12.28"
+voskAndroid = "0.3.47"
 securityCrypto = "1.0.0"
 room = "2.6.1"
 mediapipeTasksGenai = "0.10.21"
@@ -52,6 +53,7 @@ androidx-security-crypto = { group = "androidx.security", name = "security-crypt
 kotlin-test-junit = { group = "org.jetbrains.kotlin", name = "kotlin-test-junit", version.ref = "kotlin" }
 google-error-prone-annotations = { group = "com.google.errorprone", name = "error_prone_annotations", version.ref = "errorProneAnnotations" }
 detekt-formatting = { group = "io.gitlab.arturbosch.detekt", name = "detekt-formatting", version.ref = "detekt" }
+vosk-android = { group = "com.alphacephei", name = "vosk-android", version.ref = "voskAndroid" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

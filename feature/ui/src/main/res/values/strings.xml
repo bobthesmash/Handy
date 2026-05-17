@@ -1,13 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="main_greeting">Handy je připravený.</string>
+    <string name="bootstrap_error_title">Handy se nepodařilo spustit</string>
+    <string name="bootstrap_error_hint">Asistent spadl při startu (často ONNX nebo MediaPipe). Zkus reset průvodce, nebo pošli text chyby z logu.</string>
+    <string name="bootstrap_error_unknown">Neznámá chyba při vytváření asistenta.</string>
+    <string name="bootstrap_error_copy">Kopírovat chybu</string>
+    <string name="bootstrap_error_reset_onboarding">Znovu spustit průvodce oprávněními</string>
     <string name="home_listen_start">Začít poslouchat</string>
     <string name="home_listen_hint">Načte rozpoznávání řeči a propojí mikrofon po načtení modelů Sherpa.\nVyžaduje povolený mikrofon (a ONNX soubory v assets podle README — modely nejsou v repo).</string>
     <string name="onnx_models_missing_title">Chybí ONNX modely</string>
     <string name="onnx_models_missing_intro">Část funkcí poběží až dopočítáš soubory do projektu (do APK při lokálním buildu). Bez stahování přes aplikaci — použij odkazy v README vedle adresářů assets.</string>
     <string name="onnx_models_gap_ecapa">ECAPA embedding (profil / ověření hlasu)</string>
     <string name="onnx_models_gap_silero_vad">Silero VAD</string>
-    <string name="onnx_models_gap_sherpa_zipformer">Sherpa ZIPformer streaming (ASR)</string>
+    <string name="onnx_models_gap_vosk_cs">Vosk český small (ASR)</string>
+    <string name="onnx_models_gap_sherpa_zipformer">Sherpa ZIPformer streaming (záložní ASR)</string>
     <string name="onnx_models_copy_paths">Kopírovat cesty do schránky</string>
     <string name="onnx_models_paths_copied_toast">Cesty zkopírovány.</string>
     <string name="onnx_models_readme_hint">Detaily najdeš v README.txt u `feature/voiceid/.../voiceid/` a `feature/asr/.../asr/`.</string>

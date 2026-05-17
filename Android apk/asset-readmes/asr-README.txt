@@ -1,11 +1,7 @@
-ASR modely (assets)
-===================
+Streaming zipformer2 (CZ / náhradní jazyk)
+============================================
 
-**Produkce — čeština (Vosk):**
-
-  asr/vosk_cs_small/     ← `am/`, `conf/`, `graph/` (viz `vosk_cs_small/README.txt`)
-
-**Záloha / vývoj — Sherpa zipformer2 transducer:**
+Adresář (relativně k `assets/`):
 
   asr/cs_zipformer_small/
 

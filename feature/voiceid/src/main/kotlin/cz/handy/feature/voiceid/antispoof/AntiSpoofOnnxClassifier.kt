@@ -17,9 +17,10 @@ import java.util.Collections
 class AntiSpoofOnnxClassifier(
     context: Context,
     private val thresholdStore: VerificationThresholdStore,
-    private val ortEnv: OrtEnvironment = OrtEnvironment.getEnvironment(),
+    ortEnv: OrtEnvironment? = null,
     private val preprocessor: SpeechbrainEcapaPreprocessor = SpeechbrainEcapaPreprocessor(),
 ) {
+    private val ortEnv: OrtEnvironment by lazy { ortEnv ?: OrtEnvironment.getEnvironment() }
     private val app = context.applicationContext
     private val sessionLock = Any()
 

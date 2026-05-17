@@ -17,9 +17,10 @@ import kotlin.math.sqrt
  */
 class EcapaOnnxSpeakerEmbeddingExtractor(
     context: Context,
-    private val ortEnv: OrtEnvironment = OrtEnvironment.getEnvironment(),
+    ortEnv: OrtEnvironment? = null,
     private val preprocessor: SpeechbrainEcapaPreprocessor = SpeechbrainEcapaPreprocessor(),
 ) : SpeakerEmbeddingExtractor {
+    private val ortEnv: OrtEnvironment by lazy { ortEnv ?: OrtEnvironment.getEnvironment() }
     private val app = context.applicationContext
     private val sessionLock = Any()
 

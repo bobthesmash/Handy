@@ -17,6 +17,7 @@ import cz.handy.feature.asr.SherpaStreamingRecognizerHolder
 import cz.handy.feature.nlu.ChainedUtteranceParsers
 import cz.handy.feature.nlu.HandyNluCatalogs
 import cz.handy.feature.nlu.LlmPrimaryRuleFallbackNluEngine
+import cz.handy.feature.nlu.NoMatchUtteranceParser
 import cz.handy.feature.nlu.NluResult
 import cz.handy.feature.nlu.ParsedIntent
 import cz.handy.feature.nlu.RuleBasedNluEngine
@@ -62,11 +63,14 @@ class HandyAssistantViewModel(
     private val embeddingStore = SpeakerEmbeddingEncryptedStore(application)
 
     private val dialog = DialogManager()
-    private val llmParser: UtteranceNluParser =
-        MediaPipeLlmUtteranceParser.create(application, HandyNluCatalogs.mvp)
+    private val llmParser: UtteranceNluParser by lazy {
+        runCatching {
+            MediaPipeLlmUtteranceParser.create(application, HandyNluCatalogs.mvp)
+        }.getOrElse { NoMatchUtteranceParser }
+    }
     private val executor = MvpIntentExecutor(application)
     private val speech: SpeechSynthesizer = AndroidCzechSpeechSynthesizer(application)
-    private val destructiveVoiceConfirm = DestructiveConfirmVoiceVerifier(application)
+    private val destructiveVoiceConfirm by lazy { DestructiveConfirmVoiceVerifier(application) }
     private val sherpaHolder = SherpaStreamingRecognizerHolder(application)
     private val telemetry =
         HandyLocalTelemetry(application, LocalTelemetryPreferences(application))

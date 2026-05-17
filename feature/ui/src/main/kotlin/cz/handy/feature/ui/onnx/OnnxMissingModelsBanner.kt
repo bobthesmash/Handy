@@ -136,6 +136,8 @@ private fun onnxGapShortLabel(gap: OnnxBundleGap): String =
             stringResource(R.string.onnx_models_gap_ecapa)
         OnnxBundleGap.SILERO_VAD ->
             stringResource(R.string.onnx_models_gap_silero_vad)
+        OnnxBundleGap.VOSK_CS ->
+            stringResource(R.string.onnx_models_gap_vosk_cs)
         OnnxBundleGap.SHERPA_ZIPFORMER ->
             stringResource(R.string.onnx_models_gap_sherpa_zipformer)
     }

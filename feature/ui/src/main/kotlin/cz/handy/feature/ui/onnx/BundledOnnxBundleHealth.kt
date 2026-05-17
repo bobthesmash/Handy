@@ -2,6 +2,7 @@ package cz.handy.feature.ui.onnx
 
 import android.content.Context
 import cz.handy.feature.asr.CzZipformerSherpaAssets
+import cz.handy.feature.asr.VoskCzModelAssets
 import cz.handy.feature.voiceid.ecapa.EcapaModelAssets
 import cz.handy.feature.voiceid.vad.SileroVadModelAssets
 
@@ -17,7 +18,10 @@ enum class OnnxBundleGap {
     /** [SileroVadModelAssets] — ONNX v `voiceid/`. */
     SILERO_VAD,
 
-    /** [CzZipformerSherpaAssets] — adresář `asr/cs_zipformer_small/` se čtyřmi soubory. */
+    /** [VoskCzModelAssets] — český Vosk small v `asr/vosk_cs_small/`. */
+    VOSK_CS,
+
+    /** [CzZipformerSherpaAssets] — záložní Sherpa zipformer2 (např. RU placeholder). */
     SHERPA_ZIPFORMER,
     ;
 
@@ -30,6 +34,10 @@ enum class OnnxBundleGap {
             SILERO_VAD ->
                 listOf(
                     "feature/voiceid/src/main/assets/voiceid/silero_vad.onnx",
+                )
+            VOSK_CS ->
+                listOf(
+                    "feature/asr/src/main/assets/${VoskCzModelAssets.ASSET_PREFIX}/am/final.mdl",
                 )
             SHERPA_ZIPFORMER ->
                 listOf(
@@ -45,12 +53,15 @@ object BundledOnnxBundleHealth {
     fun gaps(
         ecapaBundled: Boolean,
         sileroBundled: Boolean,
+        voskCsBundled: Boolean,
         sherpaBundled: Boolean,
     ): Set<OnnxBundleGap> =
         buildSet {
             if (!ecapaBundled) add(OnnxBundleGap.ECAPA_EMBEDDING)
             if (!sileroBundled) add(OnnxBundleGap.SILERO_VAD)
-            if (!sherpaBundled) add(OnnxBundleGap.SHERPA_ZIPFORMER)
+            if (!voskCsBundled && !sherpaBundled) {
+                add(OnnxBundleGap.VOSK_CS)
+            }
         }
 
     fun gaps(context: Context): Set<OnnxBundleGap> {
@@ -58,6 +69,7 @@ object BundledOnnxBundleHealth {
         return gaps(
             ecapaBundled = EcapaModelAssets.bundled(app),
             sileroBundled = SileroVadModelAssets.bundled(app),
+            voskCsBundled = VoskCzModelAssets.isBundled(app),
             sherpaBundled = CzZipformerSherpaAssets.isBundled(app),
         )
     }
@@ -76,6 +88,9 @@ object BundledOnnxBundleHealth {
         return "Handy — chybějící ONNX (cesty podle struktury projektu):\n$paths"
     }
 
-    /** Zda má smysl spouštět Sherpa příjem řeči. */
-    fun isSherpaListeningPossible(context: Context): Boolean = CzZipformerSherpaAssets.isBundled(context.applicationContext)
+    /** Zda má smysl spouštět lokální streamovací ASR (Vosk CZ nebo záložní Sherpa). */
+    fun isSherpaListeningPossible(context: Context): Boolean {
+        val app = context.applicationContext
+        return VoskCzModelAssets.isBundled(app) || CzZipformerSherpaAssets.isBundled(app)
+    }
 }

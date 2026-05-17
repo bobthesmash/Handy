@@ -3,23 +3,22 @@ package cz.handy.feature.asr
 import android.content.Context
 
 /**
- * Lazy držák [SherpaStreamingSpeechRecognizer]: graf se vytvoří až v [acquire],
+ * Lazy držák streamovacího ASR (Vosk CZ preferovaně, jinak Sherpa zipformer2).
  * [release] uvolní nativní paměť (idle teardown [F3-T05]).
  */
 class SherpaStreamingRecognizerHolder(
     private val appContext: Context,
 ) {
-    private var recognizer: SherpaStreamingSpeechRecognizer? = null
+    private var recognizer: StreamingAsrRecognizer? = null
 
-    fun acquire(): SherpaStreamingSpeechRecognizer? {
+    fun acquire(): StreamingAsrRecognizer? {
         recognizer?.let { return it }
-        val online = createCzSherpaStreamingRecognizer(appContext) ?: return null
-        val wrapped = SherpaStreamingSpeechRecognizer(online)
-        recognizer = wrapped
-        return wrapped
+        val engine = createCzStreamingAsrRecognizer(appContext) ?: return null
+        recognizer = engine
+        return engine
     }
 
-    fun peek(): SherpaStreamingSpeechRecognizer? = recognizer
+    fun peek(): StreamingAsrRecognizer? = recognizer
 
     fun release() {
         recognizer?.close()

@@ -39,6 +39,7 @@ dependencies {
     implementation(project(":core:audio"))
     implementation(libs.androidx.core.ktx)
     implementation("com.xdcobra.sherpa:sherpa-onnx:${libs.versions.sherpaOnnx.get()}@aar")
+    implementation(libs.vosk.android)
     testImplementation(libs.kotlin.test.junit)
 }
 

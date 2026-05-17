@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.Handy" parent="android:Theme.Material.Light.NoActionBar" />
+    <color name="handy_window_background">#FF0B0E14</color>
+
+    <style name="Theme.Handy" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/handy_window_background</item>
+        <item name="android:statusBarColor">@color/handy_window_background</item>
+        <item name="android:navigationBarColor">@color/handy_window_background</item>
+    </style>
 </resources>

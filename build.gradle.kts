@@ -34,11 +34,25 @@ import java.io.File
 
 gradle.projectsEvaluated {
 
+    tasks.register<Exec>("downloadHandyOnnxDevAssets") {
+            group = "handy"
+            description =
+                "Downloads Sherpa ASR, Silero VAD, and exports ECAPA ONNX into feature/*/src/main/assets (requires Python + pip)."
+            workingDir = rootProject.layout.projectDirectory.asFile
+            commandLine(
+                "powershell",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "scripts/download-handy-onnx-assets.ps1",
+            )
+        }
+
     val checkHandyOnnxDevAssets =
         tasks.register("checkHandyOnnxDevAssets") {
             group = "verification"
             description =
-                "Non-failing: logs WARN lines when ONNX assets listed in READMEs are missing under feature/*/src/main/assets."
+                "Non-failing: logs WARN lines when ONNX assets listed in READMEs are missing. Run downloadHandyOnnxDevAssets to fetch them."
             doLast {
                 val repoRoot = rootProject.layout.projectDirectory.asFile.path
                 fun warnMissing(label: String, relativeUnixPath: String) {
@@ -59,9 +73,13 @@ gradle.projectsEvaluated {
                     "Anti-spoof ONNX (volitelný)",
                     "feature/voiceid/src/main/assets/voiceid/anti_spoof.onnx",
                 )
+                warnMissing(
+                    "Vosk CS am/final.mdl (primární ASR)",
+                    "feature/asr/src/main/assets/asr/vosk_cs_small/am/final.mdl",
+                )
                 val sherpaDir = "feature/asr/src/main/assets/asr/cs_zipformer_small"
                 listOf("tokens.txt", "encoder.onnx", "decoder.onnx", "joiner.onnx").forEach {
-                    warnMissing("Sherpa zipformer «$it»", "$sherpaDir/$it")
+                    warnMissing("Sherpa zipformer záloha «$it»", "$sherpaDir/$it")
                 }
                 warnMissing(
                     "MediaPipe LLM task (volitelný F5-T01)",
