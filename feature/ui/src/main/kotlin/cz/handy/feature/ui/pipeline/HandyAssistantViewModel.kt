@@ -184,7 +184,8 @@ class HandyAssistantViewModel(
                                 else -> ex?.message ?: "Ověření hlasu selhalo."
                             }
                     }
-                }            } finally {
+                }
+            } finally {
                 withContext(Dispatchers.Main.immediate) {
                     _voiceConfirmBusy.value = false
                 }

@@ -18,7 +18,10 @@ internal object AntiSpoofOutputParser {
         return 1f / (1f + d)
     }
 
-    private fun softmaxBinarySpoofProb(logitBonafide: Float, logitSpoof: Float): Float {
+    private fun softmaxBinarySpoofProb(
+        logitBonafide: Float,
+        logitSpoof: Float,
+    ): Float {
         val m = max(logitBonafide.toDouble(), logitSpoof.toDouble())
         val e0 = exp(logitBonafide.toDouble() - m)
         val e1 = exp(logitSpoof.toDouble() - m)
