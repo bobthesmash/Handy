@@ -36,7 +36,9 @@ include(
     ":feature:asr",
     ":feature:voiceid",
     ":feature:nlu",
+    ":feature:nlu-llm",
     ":feature:actions",
     ":feature:tts",
     ":feature:ui",
+    ":wear",
 )

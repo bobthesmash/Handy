@@ -18,6 +18,7 @@ onnxRuntime = "1.20.0"
 sherpaOnnx = "1.12.28"
 securityCrypto = "1.0.0"
 room = "2.6.1"
+mediapipeTasksGenai = "0.10.21"
 ktlint = "12.1.2"
 detekt = "1.23.8"
 
@@ -46,6 +47,7 @@ kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-cor
 porcupine-android = { group = "ai.picovoice", name = "porcupine-android", version.ref = "porcupine" }
 openwakeword-android = { group = "xyz.rementia", name = "openwakeword", version.ref = "openWakeWordAndroid" }
 onnxruntime-android = { group = "com.microsoft.onnxruntime", name = "onnxruntime-android", version.ref = "onnxRuntime" }
+mediapipe-tasks-genai = { group = "com.google.mediapipe", name = "tasks-genai", version.ref = "mediapipeTasksGenai" }
 androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" }
 kotlin-test-junit = { group = "org.jetbrains.kotlin", name = "kotlin-test-junit", version.ref = "kotlin" }
 google-error-prone-annotations = { group = "com.google.errorprone", name = "error_prone_annotations", version.ref = "errorProneAnnotations" }

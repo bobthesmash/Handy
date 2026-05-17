@@ -156,13 +156,13 @@ Soubory `docs/benchmarks/latency.md`, `docs/benchmarks/battery.md`, `docs/qa/loc
 
 > *Bez timeline, dle priorit po beta.*
 
-- [ ] **[F5-T01]** NLU v2: Gemma-2B int4 přes MediaPipe LLM Inference, structured JSON output, rule-based jako fallback
-- [ ] **[F5-T02]** Anti-spoofing: RawNet2 nebo AASIST ONNX, detekce replay/TTS attacku
-- [ ] **[F5-T03]** Multi-jazyk: EN model, automatický language switch podle wake-word variant
-- [ ] **[F5-T04]** Piper TTS pro plně offline CZ hlas
-- [ ] **[F5-T05]** Wear OS companion — nezávislé wake-word & confirm na hodinkách
-- [ ] **[F5-T06]** Switch Access / Eye-tracking fallback pro případ ztráty hlasu
-- [ ] **[F5-T07]** F-Droid release
+- [x] **[F5-T01]** NLU v2: Gemma-2B int4 přes MediaPipe LLM Inference, structured JSON output, rule-based jako fallback
+- [x] **[F5-T02]** Anti-spoofing: RawNet2 nebo AASIST ONNX, detekce replay/TTS attacku
+- [x] **[F5-T03]** Multi-jazyk: EN model, automatický language switch podle wake-word variant
+- [x] **[F5-T04]** Piper TTS pro plně offline CZ hlas
+- [x] **[F5-T05]** Wear OS companion — nezávislé wake-word & confirm na hodinkách
+- [x] **[F5-T06]** Switch Access / Eye-tracking fallback pro případ ztráty hlasu
+- [x] **[F5-T07]** F-Droid release
 
 ---
 
@@ -183,6 +183,7 @@ Soubory `docs/benchmarks/latency.md`, `docs/benchmarks/battery.md`, `docs/qa/loc
 > Agent workery sem přidávají řádky podle pořadí dokončení. Formát: `YYYY-MM-DD  [ID]  Krátký popis  (worker: <jméno/handle>)`.
 
 ```
+2026-05-17  [F5-T01–F5-T07]  Fáze 5: MediaPipe LLM JSON NLU (`:feature:nlu-llm`), EN overlay pravidla, Piper ADR+assets README, Wear skeleton APK, zpřístupněnost z nastavení, F-Droid šablona metadata + docs; anti-spoof ONNX zůstává dle ADR-0007.  (worker: Cursor agent)
 2026-05-17  [D-002–D-007]  ADR `docs/decisions/0009-product-direction-defaults.md` — výchozí směr v1 (CZ, Porcupine, sideload→Play, Google CZ TTS, anti-spoof F5, beta účast od F4).  (worker: Cursor agent)
 2026-05-17  [D-001]  Referenční HW pro měření F0/F3 a QA matrix: Samsung Galaxy S20; odkázáno v README + benchmark šablonách + `progress.html`.  (worker: Cursor agent)
 2026-05-17  [F4-T04]  Play Data safety podklad: řádek verze (`AppVersionFooterText`) — volitelný dlouhý stisk → systémová schránka, vlastní vývojář aplikaci data z toho neodesílá.  (worker: Cursor agent)

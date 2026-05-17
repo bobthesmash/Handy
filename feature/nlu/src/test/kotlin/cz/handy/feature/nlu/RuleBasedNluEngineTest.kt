@@ -13,12 +13,12 @@ class RuleBasedNluEngineTest {
         assertIntent(
             "TORCH",
             mapOf("mode" to "zapni"),
-            engine.parse("zapni baterku"),
+            engine.blockingParse("zapni baterku"),
         )
         assertIntent(
             "TORCH",
             mapOf("mode" to "vypni"),
-            engine.parse("  VYPNI   baterku "),
+            engine.blockingParse("  VYPNI   baterku "),
         )
     }
 
@@ -27,24 +27,24 @@ class RuleBasedNluEngineTest {
         assertIntent(
             "VOLUME",
             mapOf("operation" to "zvyš"),
-            engine.parse("zvyš hlasitost"),
+            engine.blockingParse("zvyš hlasitost"),
         )
-        assertIntent("VOLUME", emptyMap(), engine.parse("úplně ztiš"))
+        assertIntent("VOLUME", emptyMap(), engine.blockingParse("úplně ztiš"))
         assertIntent(
             "SET_ALARM",
             mapOf("time" to "7:30"),
-            engine.parse("budík na 7:30"),
+            engine.blockingParse("budík na 7:30"),
         )
         assertIntent(
             "READ_LAST_NOTIFICATION",
             emptyMap(),
-            engine.parse("přečti poslední notifikaci"),
+            engine.blockingParse("přečti poslední notifikaci"),
         )
     }
 
     @Test
     fun call_extractsContact() {
-        val r = engine.parse("zavolej mamince")
+        val r = engine.blockingParse("zavolej mamince")
         val m = assertIs<NluResult.Matched>(r)
         assertEquals("CALL", m.intent.intentId)
         assertEquals("mamince", m.intent.slots["contact"])
@@ -53,7 +53,7 @@ class RuleBasedNluEngineTest {
 
     @Test
     fun sms_twoSlots() {
-        val r = engine.parse("sms pro bratrovi text dorazím později")
+        val r = engine.blockingParse("sms pro bratrovi text dorazím později")
         val m = assertIs<NluResult.Matched>(r)
         assertEquals("SEND_SMS", m.intent.intentId)
         assertEquals("bratrovi", m.intent.slots["contact"])
@@ -62,8 +62,8 @@ class RuleBasedNluEngineTest {
 
     @Test
     fun no_match_blank() {
-        assertEquals(NluResult.NoMatch, engine.parse("   "))
-        assertEquals(NluResult.NoMatch, engine.parse("nesmysl který nepasuje"))
+        assertEquals(NluResult.NoMatch, engine.blockingParse("   "))
+        assertEquals(NluResult.NoMatch, engine.blockingParse("nesmysl který nepasuje"))
     }
 
     @Test

@@ -1,5 +1,7 @@
 package cz.handy.feature.ui
 
+import android.content.Intent
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -48,6 +50,7 @@ import cz.handy.core.persistence.HandyLocalTelemetry
 import cz.handy.core.persistence.LocalTelemetryPreferences
 import cz.handy.core.persistence.TelemetryLogClearResult
 import cz.handy.feature.ui.backup.ProfileBackupCoordinator
+import cz.handy.feature.ui.prefs.AssistEnglishNluPreferences
 import cz.handy.feature.ui.theme.HandyTheme
 import cz.handy.feature.wakeword.WakeWordSensitivityStore
 import kotlinx.coroutines.Dispatchers
@@ -599,6 +602,8 @@ private fun SettingsBody(
             Text(stringResource(R.string.settings_open_privacy_policy))
         }
 
+        SettingsF5ExperimentalBlock()
+
         SettingsDiagnosticsBlock()
 
         Text(
@@ -618,6 +623,62 @@ private fun SettingsBody(
         }
 
         AppVersionFooterText(spacerBeforeWhenPresent = 28.dp)
+    }
+}
+
+@Composable
+private fun SettingsF5ExperimentalBlock() {
+    val context = LocalContext.current
+    val enPrefs = remember(context) { AssistEnglishNluPreferences(context) }
+    var englishOverlay by rememberSaveable { mutableStateOf(enPrefs.isEnabled()) }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = stringResource(R.string.settings_section_f5),
+            style = MaterialTheme.typography.titleMedium,
+        )
+        Text(
+            text = stringResource(R.string.settings_f5_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.settings_f5_en_overlay_title),
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+                Text(
+                    text = stringResource(R.string.settings_f5_en_overlay_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Switch(
+                checked = englishOverlay,
+                onCheckedChange = {
+                    englishOverlay = it
+                    enPrefs.setEnabled(it)
+                },
+            )
+        }
+        Text(
+            text = stringResource(R.string.settings_f5_piper_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        OutlinedButton(
+            onClick = {
+                context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(stringResource(R.string.settings_f5_open_accessibility))
+        }
     }
 }
 

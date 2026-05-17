@@ -143,4 +143,57 @@ object HandyNluCatalogs {
                 phrase("{command} skladba")
             }
         }
+
+    /**
+     * Anglické vzory pro základní příkazy — používá se jen při zapnutém overlay v nastavení ([F5-T03]).
+     * ASR zůstává primárně CZ model; overlay pomůže při smíšených frázích nebo budoucím EN ASR.
+     */
+    val enMinimal: IntentCatalog =
+        intentCatalog {
+            intent("CALL", requiresConfirm = true) {
+                patterns("call {contact}", "phone {contact}", "dial {contact}")
+            }
+            intent("TORCH", requiresConfirm = false) {
+                phrase("{mode} flashlight")
+            }
+            intent("WHAT_TIME", requiresConfirm = false) {
+                patterns(
+                    "what time is it",
+                    "what's the time",
+                )
+            }
+            intent("WHAT_DATE", requiresConfirm = false) {
+                patterns(
+                    "what date is it",
+                    "what's the date",
+                )
+            }
+            intent("WHAT_BATTERY", requiresConfirm = false) {
+                patterns(
+                    "battery status",
+                    "how much battery",
+                )
+            }
+            intent("CANCEL", requiresConfirm = false) {
+                patterns("cancel", "abort")
+            }
+            intent("STOP", requiresConfirm = false) {
+                patterns("stop", "quiet", "silence")
+            }
+            intent("REPEAT", requiresConfirm = false) {
+                patterns("repeat", "say that again")
+            }
+            intent("OPEN_APP", requiresConfirm = false) {
+                patterns("open {app}", "launch {app}", "start {app}")
+            }
+            intent("NAVIGATE", requiresConfirm = false) {
+                patterns(
+                    "navigate to {place}",
+                    "directions to {place}",
+                )
+            }
+            intent("TIMER", requiresConfirm = false) {
+                patterns("timer {duration}", "countdown {duration}")
+            }
+        }
 }

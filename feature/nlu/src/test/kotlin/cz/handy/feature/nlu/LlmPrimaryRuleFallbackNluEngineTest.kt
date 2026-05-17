@@ -18,7 +18,7 @@ class LlmPrimaryRuleFallbackNluEngineTest {
             )
 
         val out =
-            engine.parse(
+            engine.blockingParse(
                 "zapni baterku",
             )
 
@@ -46,7 +46,7 @@ class LlmPrimaryRuleFallbackNluEngineTest {
                 rules = failingRules,
             )
 
-        val out = engine.parse("cokoli")
+        val out = engine.blockingParse("cokoli")
         assertEquals("LLM_ONLY", (out as NluResult.Matched).intent.intentId)
     }
 }

@@ -67,8 +67,8 @@ class IntentCatalogAndCompilerTest {
                 }
             }
         val engine = RuleBasedNluEngine(cat)
-        val m1 = engine.parse("jedna x") as NluResult.Matched
-        val m2 = engine.parse("dva yz") as NluResult.Matched
+        val m1 = engine.blockingParse("jedna x") as NluResult.Matched
+        val m2 = engine.blockingParse("dva yz") as NluResult.Matched
         assertEquals("PAT", m1.intent.intentId)
         assertEquals("x", m1.intent.slots["a"])
         assertEquals("yz", m2.intent.slots["a"])

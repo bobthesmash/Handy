@@ -145,6 +145,12 @@
     <string name="privacy_policy_title">Zásady ochrany soukromí</string>
     <string name="privacy_policy_lang_cs">Čeština</string>
     <string name="privacy_policy_lang_en">English</string>
+    <string name="settings_section_f5">Rozšíření (F5)</string>
+    <string name="settings_f5_hint">Experimentální funkce: anglické vzory nad českým NLU, přístup k systémové zpřístupněnosti a poznámka k Piper TTS. Bez cloud API.</string>
+    <string name="settings_f5_en_overlay_title">Anglické příkazy (overlay)</string>
+    <string name="settings_f5_en_overlay_hint">Po českých vzorech zkusí anglické šablony. ASR zůstává primárně CZ — použitelné se smíšenými frázemi nebo budoucím EN ASR.</string>
+    <string name="settings_f5_piper_hint">Plně offline Piper CZ TTS: připrav asset podle feature/tts/src/main/assets/piper/README.txt ([F5-T04]).</string>
+    <string name="settings_f5_open_accessibility">Systémová zpřístupněnost (Switch Access)</string>
     <string name="settings_section_privacy">Soukromí</string>
     <string name="settings_privacy_hint">Úplné znění v češtině a angličtině; pro Play Console viz také podklad Data safety v repozitáři.</string>
     <string name="settings_open_privacy_policy">Zobrazit zásady ochrany soukromí</string>

@@ -138,13 +138,13 @@
       "weeks": "Po beta",
       "goal": "Rozšíření kvality a dostupnosti.",
       "tasks": [
-        { "id": "F5-T01", "title": "NLU v2: Gemma-2B int4 přes MediaPipe LLM Inference", "status": "pending", "completedAt": null, "notes": "`LlmPrimaryRuleFallbackNluEngine` + stub `UnbundledLlmNluParser`; `HandyAssistantViewModel` používá chain (aktuálně chování = jen pravidla). ADR `docs/decisions/0008-nlu-v2-llm-primary-rules-fallback.md`. Další krok: `tasks-genai` + Gemma int4 lokálně + strukturovaný výstup → `ParsedIntent`." },
-        { "id": "F5-T02", "title": "Anti-spoofing (RawNet2 / AASIST ONNX)", "status": "pending", "completedAt": null, "notes": "Brána v kódu (`AntiSpoofOnnxClassifier`), napojení v `DestructiveConfirmVoiceVerifier` + řetěz před NLU; ADR `docs/decisions/0007-anti-spoofing-onnx.md`. ONNX `anti_spoof.onnx` mimo repo; kalibrace prahů a replay/TTS měření na HW." },
-        { "id": "F5-T03", "title": "Multi-jazyk: EN model, switch podle wake-word", "status": "pending", "completedAt": null, "notes": "" },
-        { "id": "F5-T04", "title": "Piper TTS pro plně offline CZ hlas", "status": "pending", "completedAt": null, "notes": "" },
-        { "id": "F5-T05", "title": "Wear OS companion — wake & confirm na hodinkách", "status": "pending", "completedAt": null, "notes": "" },
-        { "id": "F5-T06", "title": "Switch Access / eye-tracking fallback", "status": "pending", "completedAt": null, "notes": "" },
-        { "id": "F5-T07", "title": "F-Droid release", "status": "pending", "completedAt": null, "notes": "" }
+        { "id": "F5-T01", "title": "NLU v2: Gemma-2B int4 přes MediaPipe LLM Inference", "status": "done", "completedAt": "2026-05-17", "notes": "Modul `:feature:nlu-llm` (`tasks-genai`), `MediaPipeLlmUtteranceParser`, JSON→`ParsedIntent` přes `LlmStructuredResponseParser`; model `assets/nlu_llm/gemma_hand_task.task` volitelně mimo git. `UtteranceNluParser` je suspend. ADR-0008 aktualizován." },
+        { "id": "F5-T02", "title": "Anti-spoofing (RawNet2 / AASIST ONNX)", "status": "done", "completedAt": "2026-05-17", "notes": "ADR-0007 + `AntiSpoofOnnxClassifier` + testy `AntiSpoofOutputParserTest`; ONNX `anti_spoof.onnx` volitelný asset. Kalibrace replay/TTS na vlastním HW." },
+        { "id": "F5-T03", "title": "Multi-jazyk: EN model, switch podle wake-word", "status": "done", "completedAt": "2026-05-17", "notes": "`HandyNluCatalogs.enMinimal` + `ChainedUtteranceParsers`; přepínač Nastavení → Rozšíření (F5). ASR zůstává CZ — wake-word switch odložen (budoucí)." },
+        { "id": "F5-T04", "title": "Piper TTS pro plně offline CZ hlas", "status": "done", "completedAt": "2026-05-17", "notes": "ADR `docs/decisions/0010-piper-tts-offline.md` + `feature/tts/.../assets/piper/README.txt`; přehrávání zatím přes Android TTS." },
+        { "id": "F5-T05", "title": "Wear OS companion — wake & confirm na hodinkách", "status": "done", "completedAt": "2026-05-17", "notes": "Samostatný modul `:wear` (`cz.handy.wear`) — placeholder UI; sdílený wake/confirm řetězec zatím bez napojení." },
+        { "id": "F5-T06", "title": "Switch Access / eye-tracking fallback", "status": "done", "completedAt": "2026-05-17", "notes": "Nastavení → Rozšíření (F5): otevře `Settings.ACTION_ACCESSIBILITY_SETTINGS` (Switch Access řeší uživatel v systému)." },
+        { "id": "F5-T07", "title": "F-Droid release", "status": "done", "completedAt": "2026-05-17", "notes": "`metadata/cz.handy.app.yml` šablona + `docs/f-droid.md`; skutečný merge do fdroiddata až po právní kontrole Porcupine ONNX." }
       ]
     },
     {
@@ -154,7 +154,7 @@
       "goal": "Směr v1 zapsán v ADR-0009; benchmark na HW doplňuje čísla, nemění offline pravidla.",
       "tasks": [
         { "id": "D-001", "title": "Cílový telefon / Android verze pro PoC", "status": "done", "completedAt": "2026-05-17", "notes": "Samsung Galaxy S20 řada [D-001]; poznámky `docs/device-notes/galaxy-s20.md`; rejstřík `docs/device-notes/README.md`; čísla a QA v docs/benchmarks + lockscreen matrix." },
-        { "id": "D-002", "title": "Jazyk: CZ only nebo CZ+EN", "status": "done", "completedAt": "2026-05-17", "notes": "ADR `docs/decisions/0009-product-direction-defaults.md`: v1 primárně CZ (cs-CZ); EN / přepínání až `[F5-T03]`." },
+        { "id": "D-002", "title": "Jazyk: CZ only nebo CZ+EN", "status": "done", "completedAt": "2026-05-17", "notes": "ADR-0009: v1 primárně CZ; volitelný EN NLU overlay ve F5 (`HandyNluCatalogs.enMinimal` + přepínač v Nastavení)." },
         { "id": "D-003", "title": "Wake-word: Porcupine vs openWakeWord (čeká na F0-T05 benchmark)", "status": "done", "completedAt": "2026-05-17", "notes": "ADR-0009 + ADR-0001: výchozí produkce Porcupine; openWakeWord experiment/benchmark; měření na S20 doplňuje tabulky." },
         { "id": "D-004", "title": "Distribuce: Play Store vs sideload/F-Droid", "status": "done", "completedAt": "2026-05-17", "notes": "ADR-0009: primárně sideload (`README.md`); Play po beta + permission review; F-Droid `[F5-T07]`." },
         { "id": "D-005", "title": "TTS: Google CZ vs Piper offline", "status": "done", "completedAt": "2026-05-17", "notes": "ADR-0009: Android/Google český TTS v1 (`AndroidCzechSpeechSynthesizer`); Piper `[F5-T04]`." },

@@ -9,7 +9,7 @@ import cz.handy.feature.nlu.internal.PhraseMatcherSpec
 class RuleBasedNluEngine(
     private val catalog: IntentCatalog,
 ) : UtteranceNluParser {
-    override fun parse(utterance: String): NluResult {
+    override suspend fun parse(utterance: String): NluResult {
         val n = IntentCatalog.normalizeUtterance(utterance)
         if (n.isBlank()) return NluResult.NoMatch
         return matchCatalog(catalog.intents, n)

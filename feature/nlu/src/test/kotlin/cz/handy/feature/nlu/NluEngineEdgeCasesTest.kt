@@ -36,7 +36,7 @@ class NluEngineEdgeCasesTest {
                 slotRequired = mapOf("x" to false),
             )
         val engine = RuleBasedNluEngine(IntentCatalog(listOf(first, second)))
-        val r = engine.parse("ab")
+        val r = engine.blockingParse("ab")
         val m = assertIs<NluResult.Matched>(r)
         assertEquals("SECOND", m.intent.intentId)
         assertEquals("", m.intent.slots["x"])
@@ -59,14 +59,14 @@ class NluEngineEdgeCasesTest {
             )
         val catalog = IntentCatalog(listOf(def))
         val engine = RuleBasedNluEngine(catalog)
-        assertEquals(NluResult.NoMatch, engine.parse("jen jedna grupa"))
+        assertEquals(NluResult.NoMatch, engine.blockingParse("jen jedna grupa"))
     }
 
     @Test
     fun mvp_requiresConfirmFlags() {
         val engine = RuleBasedNluEngine(HandyNluCatalogs.mvp)
 
-        fun needsConfirm(phrase: String) = (engine.parse(phrase) as NluResult.Matched).intent.requiresConfirm
+        fun needsConfirm(phrase: String) = (engine.blockingParse(phrase) as NluResult.Matched).intent.requiresConfirm
 
         assertEquals(true, needsConfirm("zavolej alfa"))
         assertEquals(true, needsConfirm("pošli sms alfa že beta"))

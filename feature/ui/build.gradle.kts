@@ -44,6 +44,7 @@ dependencies {
     implementation(project(":core:audio"))
     implementation(project(":feature:wakeword"))
     implementation(project(":feature:nlu"))
+    implementation(project(":feature:nlu-llm"))
     implementation(project(":feature:actions"))
     implementation(project(":feature:asr"))
     implementation(project(":feature:voiceid"))

@@ -6,7 +6,7 @@ package cz.handy.feature.nlu
  * Bez modelu v assets vždy [NluResult.NoMatch] → projdou výhradně pravidla (`LlmPrimaryRuleFallbackNluEngine`).
  */
 object UnbundledLlmNluParser : UtteranceNluParser {
-    override fun parse(
+    override suspend fun parse(
         @Suppress("UNUSED_PARAMETER") utterance: String,
     ): NluResult = NluResult.NoMatch
 }

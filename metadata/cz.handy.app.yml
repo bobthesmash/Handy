@@ -1,0 +1,21 @@
+Categories:
+  - Accessibility
+License: Apache-2.0
+WebSite: https://github.com/bobthesmash/Handy
+SourceCode: https://github.com/bobthesmash/Handy
+IssueTracker: https://github.com/bobthesmash/Handy/issues
+
+RepoType: git
+Repo: https://github.com/bobthesmash/Handy
+
+Builds:
+  - versionName: 0.1.0
+    commit: main
+    subdir: app
+    gradle:
+      - yes
+
+ArchivePolicy: 0
+AutoUpdateMode: None
+UpdateCheckMode: None
+CurrentVersion: 0.1.0

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="wear_app_name">Handy Wear</string>
+    <string name="wear_placeholder_body">Handy companion — připravuje se (F5-T05).\n\nPrimární hlasový režim zůstává v telefonní aplikaci Handy.</string>
+</resources>

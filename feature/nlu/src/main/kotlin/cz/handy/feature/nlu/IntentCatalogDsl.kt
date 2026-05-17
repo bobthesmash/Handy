@@ -11,6 +11,18 @@ class IntentCatalog internal constructor(
     val intentIds: List<String>
         get() = intents.map { it.id }
 
+    /** Pro validaci strukturovaného LLM výstupu ([F5-T01]). */
+    fun requiresConfirmFor(intentId: String): Boolean = intents.find { it.id == intentId }?.requiresConfirm ?: false
+
+    /** Vrací `false`, pokud [intentId] není v katalogu nebo sloty neprošly [IntentDefinition.slotOk]. */
+    fun slotsSatisfied(
+        intentId: String,
+        slots: Map<String, String>,
+    ): Boolean {
+        val def = intents.find { it.id == intentId } ?: return false
+        return def.slotOk(slots)
+    }
+
     init {
         val dup =
             intents

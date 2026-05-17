@@ -63,6 +63,10 @@ gradle.projectsEvaluated {
                 listOf("tokens.txt", "encoder.onnx", "decoder.onnx", "joiner.onnx").forEach {
                     warnMissing("Sherpa zipformer «$it»", "$sherpaDir/$it")
                 }
+                warnMissing(
+                    "MediaPipe LLM task (volitelný F5-T01)",
+                    "feature/nlu-llm/src/main/assets/nlu_llm/gemma_hand_task.task",
+                )
             }
         }
 

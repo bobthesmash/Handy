@@ -19,6 +19,7 @@ kotlin {
 dependencies {
     implementation(project(":core:common"))
     implementation(libs.kotlinx.coroutines.core)
+    implementation("org.json:json:20250107")
     testImplementation(libs.kotlin.test.junit)
 }
 

@@ -14,15 +14,18 @@ import cz.handy.core.persistence.LocalTelemetryPreferences
 import cz.handy.core.persistence.PipelineLatencyTracer
 import cz.handy.feature.actions.executor.MvpIntentExecutor
 import cz.handy.feature.asr.SherpaStreamingRecognizerHolder
+import cz.handy.feature.nlu.ChainedUtteranceParsers
 import cz.handy.feature.nlu.HandyNluCatalogs
 import cz.handy.feature.nlu.LlmPrimaryRuleFallbackNluEngine
 import cz.handy.feature.nlu.NluResult
 import cz.handy.feature.nlu.ParsedIntent
 import cz.handy.feature.nlu.RuleBasedNluEngine
-import cz.handy.feature.nlu.UnbundledLlmNluParser
+import cz.handy.feature.nlu.UtteranceNluParser
+import cz.handy.feature.nlu.llm.MediaPipeLlmUtteranceParser
 import cz.handy.feature.tts.AndroidCzechSpeechSynthesizer
 import cz.handy.feature.tts.SpeechSynthesizer
 import cz.handy.feature.ui.R
+import cz.handy.feature.ui.prefs.AssistEnglishNluPreferences
 import cz.handy.feature.voiceid.antispoof.AntiSpoofInferenceException
 import cz.handy.feature.voiceid.antispoof.AntiSpoofRejectedException
 import cz.handy.feature.voiceid.confirm.DestructiveConfirmVoiceVerifier
@@ -59,11 +62,8 @@ class HandyAssistantViewModel(
     private val embeddingStore = SpeakerEmbeddingEncryptedStore(application)
 
     private val dialog = DialogManager()
-    private val nluEngine =
-        LlmPrimaryRuleFallbackNluEngine(
-            llm = UnbundledLlmNluParser,
-            rules = RuleBasedNluEngine(HandyNluCatalogs.mvp),
-        )
+    private val llmParser: UtteranceNluParser =
+        MediaPipeLlmUtteranceParser.create(application, HandyNluCatalogs.mvp)
     private val executor = MvpIntentExecutor(application)
     private val speech: SpeechSynthesizer = AndroidCzechSpeechSynthesizer(application)
     private val destructiveVoiceConfirm = DestructiveConfirmVoiceVerifier(application)
@@ -105,6 +105,21 @@ class HandyAssistantViewModel(
     val toastLine: StateFlow<String?> = _toastLine.asStateFlow()
 
     val dialogPhase get() = dialog.phase
+
+    private fun buildRulesParser(): UtteranceNluParser {
+        val cs = RuleBasedNluEngine(HandyNluCatalogs.mvp)
+        val app = getApplication<Application>()
+        return if (AssistEnglishNluPreferences(app).isEnabled()) {
+            ChainedUtteranceParsers(cs, RuleBasedNluEngine(HandyNluCatalogs.enMinimal))
+        } else {
+            cs
+        }
+    }
+
+    private suspend fun parseWithNlu(trimmed: String): NluResult {
+        val rules = buildRulesParser()
+        return LlmPrimaryRuleFallbackNluEngine(llmParser, rules).parse(trimmed)
+    }
 
     init {
         viewModelScope.launch(Dispatchers.Default) {
@@ -394,7 +409,7 @@ class HandyAssistantViewModel(
                 advanceWakeVerifyStagesForBypassDemoPipeline()
             }
 
-            when (val out = nluEngine.parse(trimmed)) {
+            when (val out = parseWithNlu(trimmed)) {
                 NluResult.NoMatch -> {
                     dialog.abortToIdle()
                     pendingTurnStartElapsed = null
