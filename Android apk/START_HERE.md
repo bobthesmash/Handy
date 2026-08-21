@@ -1,96 +1,49 @@
-# Handy — sestavení APK v Android Studiu
+# Handy — Android Studio (sync → build)
 
-Tato složka doplňuje **git repozitář** `Handy/` (nadřazená složka). Samotná složka `Android apk` **není** kompletní projekt — kódu a Gradle modulů potřebuješ celý klon.
+## 3 kroky
 
-## Co je tady
+1. **File → Open** → složka **`D:\Handy`** (kořen s `settings.gradle.kts`, ne tato podsložka `Android apk`).
+2. **Sync Project with Gradle Files** — při prvním otevření se vytvoří `local.properties` se `sdk.dir`, pokud máš standardní Android SDK.
+3. **Run** — v horní liště musí být konfigurace **`Handy (telefon)`** / modul **`app`**, **ne** `wear` ani „Handy Wear“.
+   - Bílá obrazovka s textem *„Handy companion…“* = omylem spuštěný modul **`:wear`** (placeholder pro hodinky).
+   - Správná app v launcheru: **Handy** (`cz.handy.app`). Wear: **Handy Wear (jen hodinky)**.
 
-| Položka | Účel |
-|---------|------|
-| `apk/app-debug.apk` | Hotový debug build (~140 MB) — rychlá instalace bez studia |
-| `ASSETS_CHECKLIST.md` | Velké ONNX / modely — kam je zkopírovat v repu |
-| `asset-readmes/` | Kopie README z modulů (ASR, voiceid, wake, LLM, Piper) |
-| `local.properties.example` | Šablona cesty k Android SDK |
-| `verify-assets.ps1` | Kontrola, které soubory v repu ještě chybí |
-| `docs/COMPLETION_GUIDE.md` | Co zbývá k release (HW měření, beta, rozhodnutí) |
+Při **prvním buildu** Gradle na Windows automaticky stáhne **český Vosk** + **Silero VAD** (~70 MB, může trvat pár minut, potřebuješ internet). Další buildy už jen sync → build.
 
-## 1. Android Studio — otevření projektu
+## Volitelné (doporučené)
 
-**Doporučeno:** otevři kořen repozitáře:
+| Co | Kde |
+|----|-----|
+| Wake word | `local.properties` → `picovoice.access.key=…` z [console.picovoice.ai](https://console.picovoice.ai/) |
+| Ověření hlasu (ECAPA) | Terminál: `.\gradlew.bat downloadHandyOnnxDevAssets` (potřebuje Python) |
+| ONNX verze | ECAPA (`onnxruntime-android`) musí být **1.17.1** — stejně jako uvnitř sherpa-onnx; jinak zápis hlasu: `dlopen … OrtGetApiBase` |
+| Kontrola assetů | `.\verify-assets.ps1` z této složky |
 
-1. **File → Open** → `D:\Handy` (složka s `settings.gradle.kts` a `gradlew.bat`).
-2. JDK **17** (File → Settings → Build → Gradle → Gradle JDK).
-3. **Android SDK:** API **35**, Build-Tools **35** (SDK Manager).
-4. Vytvoř `local.properties` v kořeni `Handy/` (nebo zkopíruj z `local.properties.example`):
+## APK na telefon
 
-   ```properties
-   sdk.dir=C\:\\Users\\TVOJE_JMENO\\AppData\\Local\\Android\\Sdk
-   ```
+- Výstup: `Handy\app\build\outputs\apk\debug\app-debug.apk`
+- Před testem **odinstaluj** starou Handy (nebo vymaž data), ať nepřežije starý ASR model.
+- **Testuj debug ze Studia (Run)** — release APK má minifikaci; bez ONNX ProGuard pravidel padá zápis hlasu (`OrtSession.SessionOptions`).
 
-5. **Sync Project with Gradle Files**, pak **Run** modul **app**.
+## Jak mluvit s asistentem
 
-**Alternativa:** jen podsložka `Handy/android/` — viz `docs/ANDROID_STUDIO_ANDROID_SUBFOLDER.md`. Celý git repozitář musí zůstat na disku (moduly jsou relativně nad `android/`).
+| Režim | Wake-word | Příkazy |
+|-------|-----------|---------|
+| Bez `picovoice.access.key` | **Vypnutý** — nic tě neprobudí slovem | Klepni **Začít poslouchat**, pak česky např. *kolik je hodin*, *zhasni světlo* |
+| S Picovoice klíčem | Vestavěné anglické **„Porcupine“** (ježek) | Po wake-word mluv příkaz česky |
+| Debug build (Run ve Studiu) | Stejné | Navíc pole **Vyhodnotit příkaz** — český text bez zápisu hlasu |
 
-## 2. Picovoice (wake word)
+**Zápis hlasu:** všechny věty Nahrát → Zastavit → **Uložit profil hlasu**. Bez uloženého profilu release build hlasové příkazy odmítne.
 
-Do `Handy/local.properties` (necommitovat):
+**Fáze dialogu Idle** je normální v klidu — po příkazu se změní (NLU / potvrzení).
 
-```properties
-sdk.dir=...
-picovoice.access.key=VÁŠ_KLÍČ_Z_console.picovoice.ai
-```
+## JDK / SDK
 
-Bez klíče se Porcupine pumpa nespustí; build projde. Výchozí keyword je vestavěné `PORCUPINE` (viz ADR-0001).
+- Gradle JDK **17**
+- Android SDK **API 35**, Build-Tools **35**
 
-## 3. Velké modely (povinné pro plnou funkci)
+## Co je tato složka `Android apk`
 
-Z kořene repa (Python 3 + pip):
+Návod, checklist (`ASSETS_CHECKLIST.md`), `verify-assets.ps1` — **není** samostatný Gradle projekt.
 
-```bat
-cd ..\Handy
-.\gradlew.bat downloadHandyOnnxDevAssets
-```
-
-Kontrola z této složky:
-
-```powershell
-.\verify-assets.ps1
-```
-
-Podrobná tabulka: **`ASSETS_CHECKLIST.md`**. Po stažení znovu **Build → Make Project** / `.\gradlew.bat :app:assembleDebug`.
-
-## 4. Build příkazy
-
-| Cíl | Příkaz |
-|-----|--------|
-| Debug APK | `.\gradlew :app:assembleDebug` |
-| Release APK (R8) | `.\gradlew :app:assembleRelease` |
-| CI ekvivalent | `.\gradlew ciHandy` |
-| CI + release | `.\gradlew ciHandyFull` |
-
-Výstup debug APK: `Handy/app/build/outputs/apk/debug/app-debug.apk` (stejný obsah jako `apk/app-debug.apk` v této složce, pokud jsi právě buildil).
-
-## 5. Instalace na telefon
-
-```bat
-adb install -r "D:\Handy\Android apk\apk\app-debug.apk"
-```
-
-Nebo přetáhni APK do telefonu (povolit neznámé zdroje).
-
-## 6. Wear (volitelné F5)
-
-Samostatný modul: `.\gradlew :wear:assembleDebug` → `wear/build/outputs/apk/debug/wear-debug.apk`.
-
-## 7. Co už v kódu je / co doplníš ty
-
-- **V gitu:** aplikace, NLU, UI, Sherpa AAR z Mavenu, MediaPipe `tasks-genai` z Maven Central.
-- **Mimo git (zkopíruješ podle checklistu):** ASR zipformer ONNX, ECAPA + Silero VAD, volitelně anti-spoof, openWakeWord, Gemma `.task`, Piper.
-- **Jen na zařízení / v dokumentaci:** latence, baterie, 50+30 hlasových nahrávek, beta — viz `docs/COMPLETION_GUIDE.md`.
-
-## 8. Experimentální F5 v aplikaci
-
-**Nastavení** → blok experimentální (anglický NLU overlay, odkaz na accessibility). Lokální LLM funguje až s `gemma_hand_task.task` v assets (viz checklist).
-
----
-
-Repo: https://github.com/bobthesmash/Handy — po `git pull` máš stejný kód jako na GitHubu.
+Repo: https://github.com/bobthesmash/Handy

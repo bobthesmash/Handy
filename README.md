@@ -15,6 +15,12 @@ Lokální hlasový asistent pro Android (asistivní ovládání, biometrie hlase
 - **Samsung Galaxy S20** (`[D-001]` v `IMPLEMENTATION_PLAN.md`) — výchozí telefon pro latenci (`docs/benchmarks/latency.md`), baterii (`docs/benchmarks/battery.md`), lockscreen matrix (`docs/qa/lockscreen-matrix.md`) a field test. Přesná verze Androidu / One UI se eviduje v tabulkách těchto souborů spolu s měřeními.
 - Oborový kontext k řadě S20: [`docs/device-notes/galaxy-s20.md`](docs/device-notes/galaxy-s20.md) — rejstřík adresáře: [`docs/device-notes/README.md`](docs/device-notes/README.md).
 
+## Android Studio (Windows)
+
+1. Otevři kořen repa **`Handy/`** (ne složku `Android apk/`).
+2. **Sync** → **Run** modul `app`.
+3. První build sám stáhne český Vosk + Silero VAD (`ensureHandyOnnxDevAssets`). Podrobně: [`Android apk/START_HERE.md`](Android%20apk/START_HERE.md).
+
 ## Build
 
 ```bash
