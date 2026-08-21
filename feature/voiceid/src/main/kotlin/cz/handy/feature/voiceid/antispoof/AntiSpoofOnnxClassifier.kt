@@ -6,6 +6,7 @@ import ai.onnxruntime.OrtSession
 import ai.onnxruntime.TensorInfo
 import android.content.Context
 import cz.handy.feature.voiceid.ecapa.SpeechbrainEcapaPreprocessor
+import cz.handy.feature.voiceid.onnx.OnnxRuntimeSessionFactory
 import cz.handy.feature.voiceid.verify.VerificationThresholdStore
 import java.nio.FloatBuffer
 import java.util.Collections
@@ -94,12 +95,11 @@ class AntiSpoofOnnxClassifier(
             "Anti-spoof ONNX missing (${AntiSpoofModelAssets.relativeOnnxPath()})."
         }
         val bytes = app.assets.open(AntiSpoofModelAssets.relativeOnnxPath()).use { it.readBytes() }
-        val opts =
-            OrtSession.SessionOptions().apply {
-                setIntraOpNumThreads(2)
-                setInterOpNumThreads(2)
-            }
-        val created = ortEnv.createSession(bytes, opts)
+        val created =
+            OnnxRuntimeSessionFactory.openFromBytes(
+                ortEnv = ortEnv,
+                modelBytes = bytes,
+            )
         cachedSession = created
         return created
     }

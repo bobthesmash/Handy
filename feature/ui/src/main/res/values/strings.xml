@@ -7,7 +7,14 @@
     <string name="bootstrap_error_copy">Kopírovat chybu</string>
     <string name="bootstrap_error_reset_onboarding">Znovu spustit průvodce oprávněními</string>
     <string name="home_listen_start">Začít poslouchat</string>
-    <string name="home_listen_hint">Načte rozpoznávání řeči a propojí mikrofon po načtení modelů Sherpa.\nVyžaduje povolený mikrofon (a ONNX soubory v assets podle README — modely nejsou v repo).</string>
+    <string name="home_listen_hint">Načte české rozpoznávání (Vosk) a propojí mikrofon s bufferem služby EarService. Bez wake-word klíče musíš klepnout sem, pak mluv česky.</string>
+    <string name="home_hint_wake_disabled">Wake-word je vypnutý — v local.properties chybí picovoice.access.key (viz START_HERE). Mikrofon běží na pozadí, ale nic tě neprobudí slovem.</string>
+    <string name="home_hint_wake_enabled">Wake-word: řekni „%1$s“ (anglicky, vestavěné Porcupine). Pak mluv příkaz česky.</string>
+    <string name="home_hint_no_voice_profile">Profil hlasu není uložený — dokonči Zápis hlasu → Uložit profil. Bez něj release build příkazy z hlasu nepustí.</string>
+    <string name="home_hint_no_asr_models">V APK chybí ASR modely (Vosk nebo Sherpa) — spusť downloadHandyOnnxDevAssets a znovu sestav aplikaci.</string>
+    <string name="home_hint_debug_commands">Debug: do pole níže napiš česky např. „kolik je hodin“, „zhasni světlo“ a klepni Vyhodnotit příkaz (profil hlasu není nutný).</string>
+    <string name="home_hint_release_voice">Release: klepni Začít poslouchat, pak řekni např. „kolik je hodin“ nebo „zhasni světlo“.</string>
+    <string name="enrollment_onnx_hint">Chyba OrtGetApiBase / dlopen: v APK jsou dvě různé verze ONNX Runtime (Sherpa vs. ECAPA). Sestav znovu po sync Gradle (ORT 1.17.1) a odinstaluj starou Handy. Potřebuješ ecapa_embedding.onnx v assets.</string>
     <string name="onnx_models_missing_title">Chybí ONNX modely</string>
     <string name="onnx_models_missing_intro">Část funkcí poběží až dopočítáš soubory do projektu (do APK při lokálním buildu). Bez stahování přes aplikaci — použij odkazy v README vedle adresářů assets.</string>
     <string name="onnx_models_gap_ecapa">ECAPA embedding (profil / ověření hlasu)</string>

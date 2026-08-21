@@ -2,6 +2,7 @@ package cz.handy.feature.ui.pipeline
 
 import android.app.Application
 import android.os.SystemClock
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -34,6 +35,7 @@ import cz.handy.feature.voiceid.ecapa.SpeechbrainEcapaPreprocessor
 import cz.handy.feature.voiceid.storage.SpeakerEmbeddingEncryptedStore
 import cz.handy.feature.voiceid.verify.VerificationVerdict
 import cz.handy.feature.wakeword.WakeWordSignalBus
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -125,8 +127,14 @@ class HandyAssistantViewModel(
         return LlmPrimaryRuleFallbackNluEngine(llmParser, rules).parse(trimmed)
     }
 
+    private val heavyModelExceptionHandler =
+        CoroutineExceptionHandler { _, e ->
+            Log.w(HEAVY_MODEL_TAG, "Heavy model / mic feed failed", e)
+            stopMicFeed()
+        }
+
     init {
-        viewModelScope.launch(Dispatchers.Default) {
+        viewModelScope.launch(Dispatchers.Default + heavyModelExceptionHandler) {
             WakeWordSignalBus.wakes.collect {
                 noteWakeWordForHeavyModels()
             }
@@ -218,7 +226,7 @@ class HandyAssistantViewModel(
      * Po [HEAVY_MODEL_IDLE_MINUTES] bez další aktivity se uvolní paměť.
      */
     fun noteWakeWordForHeavyModels() {
-        viewModelScope.launch(Dispatchers.Default) {
+        viewModelScope.launch(Dispatchers.Default + heavyModelExceptionHandler) {
             cancelHeavyModelsIdleRelease()
             PipelineLatencyTracer.markWakeWordSignal()
             val rec = sherpaHolder.acquire()
@@ -295,7 +303,7 @@ class HandyAssistantViewModel(
         pcmConsumeMarker = ring.totalSamplesWritten()
         micFeedAllowed.set(true)
         micFeedJob =
-            viewModelScope.launch(Dispatchers.Default) {
+            viewModelScope.launch(Dispatchers.Default + heavyModelExceptionHandler) {
                 while (isActive && micFeedAllowed.get()) {
                     if (!micFeedAllowed.get()) {
                         break
@@ -599,6 +607,7 @@ class HandyAssistantViewModel(
     }
 
     private companion object {
+        private const val HEAVY_MODEL_TAG = "HandyHeavyModels"
         private const val HEAVY_MODEL_IDLE_MINUTES = 5L
         private const val MIC_FEED_POLL_MS = 25L
     }

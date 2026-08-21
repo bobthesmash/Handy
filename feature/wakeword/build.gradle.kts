@@ -90,7 +90,10 @@ dependencies {
 
     implementation(libs.porcupine.android)
 
-    implementation(libs.openwakeword.android)
+    implementation(libs.openwakeword.android) {
+        // Re-MENTIA táhne novější ORT; v APK musí zůstat 1.17.1 (sherpa + voiceid ECAPA).
+        exclude(group = "com.microsoft.onnxruntime", module = "onnxruntime-android")
+    }
 
     testImplementation(libs.kotlin.test.junit)
 }

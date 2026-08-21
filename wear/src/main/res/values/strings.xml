@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="wear_app_name">Handy Wear</string>
-    <string name="wear_placeholder_body">Handy companion — připravuje se (F5-T05).\n\nPrimární hlasový režim zůstává v telefonní aplikaci Handy.</string>
+    <string name="wear_app_name">Handy Wear (jen hodinky)</string>
+    <string name="wear_placeholder_body">Toto je jen kostra pro hodinky (F5-T05).\n\nNa telefonu spouštěj modul app „Handy“ v Android Studiu — ne wear.</string>
 </resources>

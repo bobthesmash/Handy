@@ -60,7 +60,10 @@ android {
 
     packaging {
         jniLibs {
+            // Sherpa + onnxruntime-android oba přinášejí libonnxruntime.so — verze musí být 1.17.1 (viz libs.versions.toml).
             pickFirsts += "**/libonnxruntime.so"
+            pickFirsts += "**/libonnxruntime4j_jni.so"
+            pickFirsts += "**/libsherpa-onnx-jni.so"
             pickFirsts += "**/libc++_shared.so"
         }
         resources {

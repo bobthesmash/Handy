@@ -1,0 +1,6 @@
+## Zkopíruj na local.properties (nebo nech Android Studio / Gradle vytvořit sdk.dir automaticky).
+
+sdk.dir=C\:\\Users\\YOUR_USERNAME\\AppData\\Local\\Android\\Sdk
+
+## Volitelné — wake word Porcupine (https://console.picovoice.ai/)
+# picovoice.access.key=

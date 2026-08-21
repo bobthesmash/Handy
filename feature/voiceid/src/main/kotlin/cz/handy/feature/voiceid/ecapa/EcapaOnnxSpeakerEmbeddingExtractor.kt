@@ -6,6 +6,7 @@ import ai.onnxruntime.OrtSession
 import ai.onnxruntime.TensorInfo
 import android.content.Context
 import cz.handy.core.audio.MicCaptureConfig
+import cz.handy.feature.voiceid.onnx.OnnxRuntimeSessionFactory
 import java.nio.FloatBuffer
 import java.util.Collections
 import kotlin.math.sqrt
@@ -80,12 +81,11 @@ class EcapaOnnxSpeakerEmbeddingExtractor(
             error("Missing ONNX in assets (${EcapaModelAssets.relativeOnnxPath()}).")
         }
         val bytes = app.assets.open(EcapaModelAssets.relativeOnnxPath()).use { it.readBytes() }
-        val opts =
-            OrtSession.SessionOptions().apply {
-                setIntraOpNumThreads(2)
-                setInterOpNumThreads(2)
-            }
-        val created = ortEnv.createSession(bytes, opts)
+        val created =
+            OnnxRuntimeSessionFactory.openFromBytes(
+                ortEnv = ortEnv,
+                modelBytes = bytes,
+            )
         cachedSession = created
         return created
     }

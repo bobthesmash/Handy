@@ -118,6 +118,8 @@ fun HandyRootScreen(
             ) == PackageManager.PERMISSION_GRANTED
 
         ) {
+            // Krátká prodleva po grantu mic — některé OEM ještě odmítnou FGS hned v dalším snímku.
+            delay(400)
             EarService.start(app)
         }
     }
@@ -279,13 +281,11 @@ private fun HandyGreeting(
 
             OnnxMissingModelsBanner()
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(12.dp))
 
-            LaunchedEffect(showCommandPipelineUi, assistant) {
-                if (showCommandPipelineUi) {
-                    assistant?.noteWakeWordForHeavyModels()
-                }
-            }
+            HomePipelineHintsBanner(showCommandPipelineUi = showCommandPipelineUi)
+
+            Spacer(Modifier.height(16.dp))
 
             Button(onClick = onOpenEnrollment) {
                 Text(text = stringResource(R.string.open_enrollment))

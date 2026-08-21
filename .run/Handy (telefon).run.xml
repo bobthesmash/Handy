@@ -1,0 +1,12 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="true" name="Handy (telefon)" type="AndroidRunConfigurationType" factoryName="Android App">
+    <module name="Handy.app.main" />
+    <option name="DEPLOY" value="true" />
+    <option name="DEPLOY_APK_FROM_BUNDLE" value="false" />
+    <option name="MODE" value="default" />
+    <option name="TARGET_SELECTION_MODE" value="SHOW_DIALOG" />
+    <method v="2">
+      <option name="Android.Gradle.BeforeRunTask" enabled="true" />
+    </method>
+  </configuration>
+</component>

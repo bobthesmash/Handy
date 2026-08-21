@@ -9,15 +9,41 @@ private val CS = Locale.forLanguageTag("cs-CZ")
  * Šablona typu `zavolej {contact}` → regex s grupami; poslední slot je greedy, prostřední lazy.
  * Bez `{…}` vznikne přesná fráze (např. `"zapni baterku"`).
  */
+private data class SlotSpan(
+    val name: String,
+    val start: Int,
+    val endExclusive: Int,
+)
+
 internal object PhraseTemplateCompiler {
-    private val bracePlaceholder = Regex("""\{([^}]+)}""")
+    /**
+     * `{slot}` placeholders are parsed without regex — Android ICU requires escaping both
+     * `{` and `}` in patterns, so `Regex("""\{([^}]+)}""")` throws [PatternSyntaxException] at class init.
+     */
+    private fun findSlotSpans(normalized: String): List<SlotSpan> {
+        val spans = mutableListOf<SlotSpan>()
+        var index = 0
+        while (index < normalized.length) {
+            if (normalized[index] != '{') {
+                index++
+                continue
+            }
+            val close = normalized.indexOf('}', startIndex = index + 1)
+            require(close > index) { "Neuzavřený slot v šabloně: $normalized" }
+            val name = normalized.substring(index + 1, close).trim().lowercase(CS)
+            require(name.isNotBlank()) { "Název slotu nesmí být prázdný: $normalized" }
+            spans.add(SlotSpan(name = name, start = index, endExclusive = close + 1))
+            index = close + 1
+        }
+        return spans
+    }
 
     fun compile(phraseTemplate: String): PhraseMatcherSpec {
         val normalized = phraseTemplate.trim().lowercase(CS).replace(Regex("\\s+"), " ")
         require(normalized.isNotBlank()) { "Šablona fráze nesmí být prázdná." }
 
-        val occurrences = bracePlaceholder.findAll(normalized).toList()
-        if (occurrences.isEmpty()) {
+        val spans = findSlotSpans(normalized)
+        if (spans.isEmpty()) {
             val pat = "^" + Pattern.quote(normalized) + "$"
             return PhraseMatcherSpec(
                 regex = Regex(pat, RegexOption.IGNORE_CASE),
@@ -25,7 +51,7 @@ internal object PhraseTemplateCompiler {
             )
         }
 
-        val orderedSlotNames = occurrences.map { it.groupValues[1].trim().lowercase(CS) }
+        val orderedSlotNames = spans.map { it.name }
         check(orderedSlotNames.toSet().size == orderedSlotNames.size) {
             "Šablona nesmí opakovat název slotu: $phraseTemplate"
         }
@@ -34,13 +60,13 @@ internal object PhraseTemplateCompiler {
             buildString {
                 append('^')
                 var cursor = 0
-                occurrences.forEachIndexed { index, match ->
-                    val literal = normalized.substring(cursor, match.range.first)
+                spans.forEachIndexed { index, span ->
+                    val literal = normalized.substring(cursor, span.start)
                     append(Pattern.quote(literal))
 
-                    val isLastCapture = index == occurrences.lastIndex
+                    val isLastCapture = index == spans.lastIndex
                     append(if (isLastCapture) "(.+)" else "(.+?)")
-                    cursor = match.range.last + 1
+                    cursor = span.endExclusive
                 }
                 append(Pattern.quote(normalized.substring(cursor)))
                 append('$')

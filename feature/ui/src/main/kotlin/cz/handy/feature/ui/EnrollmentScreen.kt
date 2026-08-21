@@ -254,6 +254,14 @@ fun EnrollmentBody(
                 color =
                     if (ok) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
             )
+            if (!ok) {
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = stringResource(R.string.enrollment_onnx_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
 
         Spacer(Modifier.height(8.dp))

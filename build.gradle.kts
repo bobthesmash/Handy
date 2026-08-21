@@ -20,9 +20,14 @@ plugins {
 
 }
 
-
-
 import java.io.File
+
+/** Sherpa-onnx 1.12.28 + ECAPA musí sdílet stejnou `libonnxruntime.so` (ORT 1.17.1). */
+subprojects {
+    configurations.configureEach {
+        resolutionStrategy.force("com.microsoft.onnxruntime:onnxruntime-android:1.17.1")
+    }
+}
 
 
 
@@ -33,12 +38,16 @@ import java.io.File
  */
 
 gradle.projectsEvaluated {
+    val repoRoot = rootProject.layout.projectDirectory.asFile
+    val voskMarker = repoRoot.resolve("feature/asr/src/main/assets/asr/vosk_cs_small/am/final.mdl")
+    val sileroMarker = repoRoot.resolve("feature/voiceid/src/main/assets/voiceid/silero_vad.onnx")
 
-    tasks.register<Exec>("downloadHandyOnnxDevAssets") {
+    val downloadHandyOnnxDevAssets =
+        tasks.register<Exec>("downloadHandyOnnxDevAssets") {
             group = "handy"
             description =
-                "Downloads Sherpa ASR, Silero VAD, and exports ECAPA ONNX into feature/*/src/main/assets (requires Python + pip)."
-            workingDir = rootProject.layout.projectDirectory.asFile
+                "Stáhne Vosk CZ + Silero + Sherpa záloha + ECAPA (Python pro ECAPA). Ruční / CI doplnění."
+            workingDir = repoRoot
             commandLine(
                 "powershell",
                 "-ExecutionPolicy",
@@ -46,6 +55,38 @@ gradle.projectsEvaluated {
                 "-File",
                 "scripts/download-handy-onnx-assets.ps1",
             )
+        }
+
+    val ensureHandyOnnxDevAssets =
+        tasks.register<Exec>("ensureHandyOnnxDevAssets") {
+            group = "handy"
+            description =
+                "Před buildem app: stáhne český Vosk + Silero VAD, pokud chybí (Windows, první build může trvat ~2 min)."
+            workingDir = repoRoot
+            commandLine(
+                "powershell",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "scripts/download-handy-onnx-assets.ps1",
+                "-SkipSherpa",
+                "-SkipEcapa",
+            )
+            onlyIf {
+                val auto =
+                    providers.gradleProperty("handy.autoDownloadAssets")
+                        .orElse("true")
+                        .get()
+                        .toBoolean()
+                val ci =
+                    providers.environmentVariable("CI").isPresent ||
+                        providers.environmentVariable("GITHUB_ACTIONS").isPresent
+                auto &&
+                    !ci &&
+                    System.getProperty("os.name").lowercase().contains("win") &&
+                    (!voskMarker.isFile || !sileroMarker.isFile)
+            }
+            outputs.files(voskMarker, sileroMarker)
         }
 
     val checkHandyOnnxDevAssets =
@@ -115,6 +156,10 @@ gradle.projectsEvaluated {
 
             dependsOn(project(":app").tasks.named("assembleDebug"))
         }
+
+    project(":app").tasks.named("preBuild").configure {
+        dependsOn(ensureHandyOnnxDevAssets)
+    }
 
     tasks.register("ciHandyFull") {
         group = "verification"

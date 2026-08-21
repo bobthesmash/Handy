@@ -12,6 +12,7 @@ import android.media.AudioFormat
 import android.media.AudioRecord
 import android.os.Build
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -31,8 +32,11 @@ class EarService : Service() {
 
     private var captureJob: Job? = null
 
-    /** Bluetooth SCO + [MODE_IN_COMMUNICATION] pairing for headset mics ([F0-T06]). */
-    private val audioRouting = AudioHandsFreeRouting(this)
+    /**
+     * Bluetooth SCO + [MODE_IN_COMMUNICATION] — inicializace až v [onCreate]; v konstruktoru služby
+     * ještě není připojený [Context] (viz crash při `getApplicationContext()`).
+     */
+    private lateinit var audioRouting: AudioHandsFreeRouting
 
     @Volatile
     private var audioRecord: AudioRecord? = null
@@ -51,6 +55,7 @@ class EarService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        audioRouting = AudioHandsFreeRouting(applicationContext)
         EarAudioBridge.attach(ringBuffer)
         createNotificationChannel()
     }
@@ -60,7 +65,9 @@ class EarService : Service() {
         captureJob?.cancel()
         captureJob = null
         releaseRecorder()
-        audioRouting.release()
+        if (::audioRouting.isInitialized) {
+            audioRouting.release()
+        }
         super.onDestroy()
     }
 
@@ -106,7 +113,9 @@ class EarService : Service() {
         releaseRecorder()
         captureJob?.cancel()
         captureJob = null
-        audioRouting.endHandsFreeMicRoute()
+        if (::audioRouting.isInitialized) {
+            audioRouting.endHandsFreeMicRoute()
+        }
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
@@ -265,6 +274,7 @@ class EarService : Service() {
     }
 
     companion object {
+        private const val TAG = "HandyEarService"
         private const val CHANNEL_ID = "ear_listening_channel"
         private const val ACTION_STOP = "cz.handy.core.audio.ACTION_STOP_LISTENING"
         private const val ACTION_UPDATE_FOREGROUND_UI_STATE =
@@ -273,10 +283,16 @@ class EarService : Service() {
         private const val NOTIFICATION_ID = 7134
         private const val CAPTURE_READ_SHORTS = 2048
 
-        fun start(context: Context) {
-            val app = context.applicationContext
-            app.startForegroundService(Intent(app, EarService::class.java))
-        }
+        /**
+         * Spustí foreground službu; při odmítnutí systémem (oprávnění, OEM) nepropaguje výjimku do UI.
+         *
+         * @return `true` pokud byl intent odeslán bez výjimky
+         */
+        fun start(context: Context): Boolean =
+            runForegroundServiceIntent(
+                context,
+                Intent(context.applicationContext, EarService::class.java),
+            )
 
         /**
          * Aktualizuje titulek a text notifikace podle fáze dialogu ([F1-T20]).
@@ -285,15 +301,24 @@ class EarService : Service() {
         fun notifyForegroundUiState(
             context: Context,
             state: EarForegroundUiState,
-        ) {
-            val app = context.applicationContext
-            app.startForegroundService(
-                Intent(app, EarService::class.java).apply {
+        ): Boolean =
+            runForegroundServiceIntent(
+                context,
+                Intent(context.applicationContext, EarService::class.java).apply {
                     action = ACTION_UPDATE_FOREGROUND_UI_STATE
                     putExtra(EXTRA_FOREGROUND_UI_STATE, state.name)
                 },
             )
-        }
+
+        private fun runForegroundServiceIntent(
+            context: Context,
+            intent: Intent,
+        ): Boolean =
+            runCatching {
+                context.applicationContext.startForegroundService(intent)
+            }.onFailure { e ->
+                Log.w(TAG, "Foreground service intent rejected: ${e.javaClass.simpleName}", e)
+            }.isSuccess
 
         fun stop(context: Context) {
             val app = context.applicationContext

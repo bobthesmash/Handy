@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.res.AssetManager
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
 
 /**
  * Český Vosk small (Rhasspy) — [vosk-model-small-cs-0.4-rhasspy](https://alphacephei.com/vosk/models).
@@ -27,12 +28,21 @@ object VoskCzModelAssets {
 
     fun isBundled(context: Context): Boolean = isBundled(context.assets)
 
+    private val copyLock = Any()
+
     /** Cesta k rozbalenému modelu na disku zařízení (kopie z assets při prvním volání). */
+    @Throws(IOException::class)
     fun resolveOnDeviceModelDir(context: Context): File {
         val dest = File(context.applicationContext.filesDir, FILES_SUBDIR)
         val marker = File(dest, "am/final.mdl")
         if (marker.isFile) return dest
-        copyAssetTree(context.assets, ASSET_PREFIX, dest)
+        synchronized(copyLock) {
+            if (marker.isFile) return dest
+            copyAssetTree(context.assets, ASSET_PREFIX, dest)
+        }
+        if (!marker.isFile) {
+            throw IOException("Vosk model incomplete after copy: ${marker.absolutePath}")
+        }
         return dest
     }
 

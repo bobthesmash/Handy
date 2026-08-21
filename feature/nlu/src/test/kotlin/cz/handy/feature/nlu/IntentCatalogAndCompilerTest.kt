@@ -97,6 +97,16 @@ class IntentCatalogAndCompilerTest {
     }
 
     @Test
+    fun mvp_catalog_initializes_allMatchers() {
+        // Catalog init compiles every phrase template; must not throw (Android ICU rejects unescaped `{` in Regex).
+        assertTrue(HandyNluCatalogs.mvp.intents.isNotEmpty())
+        HandyNluCatalogs.mvp.intents.forEach { def ->
+            assertTrue(def.matchers.isNotEmpty(), "Intent ${def.id} has no matchers")
+        }
+        assertTrue(HandyNluCatalogs.enMinimal.intents.isNotEmpty())
+    }
+
+    @Test
     fun compiler_twoSlots_firstLazyLastGreedy() {
         val spec = PhraseTemplateCompiler.compile("sms pro {contact} text {message}")
         assertEquals(listOf("contact", "message"), spec.orderedSlotNames)

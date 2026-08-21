@@ -2,7 +2,9 @@
 # Run from repo root:  powershell -ExecutionPolicy Bypass -File scripts/download-handy-onnx-assets.ps1
 
 param(
-    [switch]$ForceAsr
+    [switch]$ForceAsr,
+    [switch]$SkipSherpa,
+    [switch]$SkipEcapa
 )
 
 $ErrorActionPreference = "Stop"
@@ -74,10 +76,14 @@ if ((Test-Path $VoskMarker) -and -not $ForceAsr) {
     Write-Host "[ok]   Vosk CS -> $VoskAssetDir" -ForegroundColor Green
 }
 
-$SherpaBase = "https://huggingface.co/csukuangfj/sherpa-onnx-streaming-zipformer-small-ru-vosk-2025-08-16/resolve/main"
-$SherpaDir = Join-Path $Root "feature\asr\src\main\assets\asr\cs_zipformer_small"
-foreach ($name in @("tokens.txt", "encoder.onnx", "decoder.onnx", "joiner.onnx")) {
-    Get-FileIfMissing -Url "$SherpaBase/$name" -Dest (Join-Path $SherpaDir $name) -Label "Sherpa RU placeholder $name" -Force:$ForceAsr
+if (-not $SkipSherpa) {
+    $SherpaBase = "https://huggingface.co/csukuangfj/sherpa-onnx-streaming-zipformer-small-ru-vosk-2025-08-16/resolve/main"
+    $SherpaDir = Join-Path $Root "feature\asr\src\main\assets\asr\cs_zipformer_small"
+    foreach ($name in @("tokens.txt", "encoder.onnx", "decoder.onnx", "joiner.onnx")) {
+        Get-FileIfMissing -Url "$SherpaBase/$name" -Dest (Join-Path $SherpaDir $name) -Label "Sherpa RU placeholder $name" -Force:$ForceAsr
+    }
+} else {
+    Write-Host "[skip] Sherpa zipformer (záložní ASR)" -ForegroundColor DarkGray
 }
 
 $VoiceDir = Join-Path $Root "feature\voiceid\src\main\assets\voiceid"
@@ -87,7 +93,9 @@ Get-FileIfMissing `
     -Label "Silero VAD v5"
 
 $EcapaOut = Join-Path $VoiceDir "ecapa_embedding.onnx"
-if (-not (Test-Path $EcapaOut)) {
+if ($SkipEcapa) {
+    Write-Host "[skip] ECAPA export (spusť bez -SkipEcapa pro ověření hlasu)" -ForegroundColor DarkGray
+} elseif (-not (Test-Path $EcapaOut)) {
     Write-Host "[ecapa] Export via SpeechBrain (deps on D: if C: is full)..." -ForegroundColor Cyan
     $pyDeps = Join-Path $Root "build\python-deps"
     $pipCache = Join-Path $Root "build\pip-cache"

@@ -5,6 +5,7 @@ import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
 import android.content.Context
 import cz.handy.core.audio.MicCaptureConfig
+import cz.handy.feature.voiceid.onnx.OnnxRuntimeSessionFactory
 import java.nio.FloatBuffer
 import java.nio.LongBuffer
 
@@ -142,12 +143,11 @@ class SileroOnnxVoiceActivityDetector(
         }
         val bytes =
             app.assets.open(SileroVadModelAssets.relativeOnnxPath()).use { it.readBytes() }
-        val opts =
-            OrtSession.SessionOptions().apply {
-                setIntraOpNumThreads(2)
-                setInterOpNumThreads(2)
-            }
-        val created = ortEnv.createSession(bytes, opts)
+        val created =
+            OnnxRuntimeSessionFactory.openFromBytes(
+                ortEnv = ortEnv,
+                modelBytes = bytes,
+            )
         cachedSession = created
         return created
     }
