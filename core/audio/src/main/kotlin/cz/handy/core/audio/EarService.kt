@@ -12,8 +12,9 @@ import android.media.AudioFormat
 import android.media.AudioRecord
 import android.os.Build
 import android.os.IBinder
-import android.util.Log
 import androidx.core.app.NotificationCompat
+import android.os.PowerManager
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -31,12 +32,10 @@ class EarService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     private var captureJob: Job? = null
+    private var wakeLock: PowerManager.WakeLock? = null
 
-    /**
-     * Bluetooth SCO + [MODE_IN_COMMUNICATION] — inicializace až v [onCreate]; v konstruktoru služby
-     * ještě není připojený [Context] (viz crash při `getApplicationContext()`).
-     */
-    private lateinit var audioRouting: AudioHandsFreeRouting
+    /** Bluetooth SCO + [MODE_IN_COMMUNICATION] pairing for headset mics ([F0-T06]). */
+    private val audioRouting by lazy { AudioHandsFreeRouting(this) }
 
     @Volatile
     private var audioRecord: AudioRecord? = null
@@ -50,24 +49,41 @@ class EarService : Service() {
     private var micHardwareEffects: MicHardwareAudioEffects? = null
 
     private var foregroundUiState: EarForegroundUiState = EarForegroundUiState.Idle
+    private var isExplicitlyStopped = false
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onCreate() {
         super.onCreate()
-        audioRouting = AudioHandsFreeRouting(applicationContext)
+        activeInstance = this
+        isExplicitlyStopped = false
+        val pm = getSystemService(POWER_SERVICE) as? PowerManager
+        wakeLock = pm?.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "cz.handy:EarServiceWakeLock")?.apply {
+            setReferenceCounted(false)
+            acquire()
+        }
         EarAudioBridge.attach(ringBuffer)
         createNotificationChannel()
     }
 
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        // EarService stays alive until user force-stops the app or taps Stop in notification.
+        super.onTaskRemoved(rootIntent)
+    }
+
     override fun onDestroy() {
+        if (activeInstance === this) {
+            activeInstance = null
+        }
         EarAudioBridge.detach(ringBuffer)
         captureJob?.cancel()
         captureJob = null
         releaseRecorder()
-        if (::audioRouting.isInitialized) {
-            audioRouting.release()
+        audioRouting.release()
+        if (wakeLock?.isHeld == true) {
+            wakeLock?.release()
         }
+        wakeLock = null
         super.onDestroy()
     }
 
@@ -76,7 +92,7 @@ class EarService : Service() {
         flags: Int,
         startId: Int,
     ): Int {
-        if (intent?.action == ACTION_STOP) {
+        if (isExplicitlyStopped || intent?.action == ACTION_STOP) {
             stopCaptureAndTeardown()
             return START_NOT_STICKY
         }
@@ -89,15 +105,22 @@ class EarService : Service() {
         }
 
         val notification = buildNotification(foregroundUiState)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            startForeground(
-                NOTIFICATION_ID,
-                notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE,
-            )
-        } else {
-            @Suppress("DEPRECATION")
-            startForeground(NOTIFICATION_ID, notification)
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                startForeground(
+                    NOTIFICATION_ID,
+                    notification,
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE,
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                startForeground(NOTIFICATION_ID, notification)
+            }
+        } catch (_: SecurityException) {
+            // RECORD_AUDIO not granted yet — cannot start microphone FGS.
+            // Stop gracefully instead of crashing; UI will re-request the permission.
+            stopSelf()
+            return START_NOT_STICKY
         }
 
         if (captureJob?.isActive != true) {
@@ -109,14 +132,27 @@ class EarService : Service() {
         return START_STICKY
     }
 
-    private fun stopCaptureAndTeardown() {
-        releaseRecorder()
+    fun stopCaptureAndTeardown() {
+        isExplicitlyStopped = true
         captureJob?.cancel()
         captureJob = null
-        if (::audioRouting.isInitialized) {
-            audioRouting.endHandsFreeMicRoute()
+        releaseRecorder()
+        audioRouting.endHandsFreeMicRoute()
+        audioRouting.release()
+        EarAudioBridge.detach(ringBuffer)
+        if (wakeLock?.isHeld == true) {
+            wakeLock?.release()
         }
-        stopForeground(STOP_FOREGROUND_REMOVE)
+        wakeLock = null
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+        } else {
+            @Suppress("DEPRECATION")
+            stopForeground(true)
+        }
+        val nm = getSystemService(NOTIFICATION_SERVICE) as? NotificationManager
+        nm?.cancel(NOTIFICATION_ID)
+        nm?.cancelAll()
         stopSelf()
     }
 
@@ -157,6 +193,7 @@ class EarService : Service() {
             .setSmallIcon(R.drawable.ic_ear_small)
             .setOnlyAlertOnce(true)
             .setOngoing(true)
+            .setContentIntent(launchAppPendingIntent())
             .addAction(
                 0,
                 getString(R.string.ear_notification_stop),
@@ -169,35 +206,61 @@ class EarService : Service() {
             ).build()
     }
 
+
+    private fun launchAppPendingIntent(): PendingIntent {
+        val launch =
+            packageManager.getLaunchIntentForPackage(packageName)
+                ?: Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+        launch.addFlags(
+            Intent.FLAG_ACTIVITY_NEW_TASK or
+                Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                Intent.FLAG_ACTIVITY_REORDER_TO_FRONT,
+        )
+        launch.putExtra("WAKE_UP_PHONE", true)
+        return PendingIntent.getActivity(
+            this,
+            1,
+            launch,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+    }
+
     private suspend fun runCapture() {
         audioRouting.beginHandsFreeMicRoute()
         try {
-            val record =
-                createAudioRecord() ?: run {
-                    shutdownAfterInitFailure()
-                    return
+            while (coroutineContext.isActive) {
+                val record = createAudioRecord()
+                if (record == null) {
+                    delay(1000)
+                    continue
                 }
 
-            audioRecord = record
-            record.startRecording()
-            micHardwareEffects = MicHardwareAudioEffects.tryAttach(record.audioSessionId)
-            val batch = ShortArray(CAPTURE_READ_SHORTS)
+                audioRecord = record
+                try {
+                    record.startRecording()
+                    micHardwareEffects = MicHardwareAudioEffects.tryAttach(record.audioSessionId)
+                    val batch = ShortArray(CAPTURE_READ_SHORTS)
 
-            try {
-                while (coroutineContext.isActive) {
-                    val read = record.read(batch, 0, batch.size)
-                    if (read == AudioRecord.ERROR_INVALID_OPERATION ||
-                        read == AudioRecord.ERROR_BAD_VALUE
-                    ) {
-                        break
+                    while (coroutineContext.isActive) {
+                        val read = record.read(batch, 0, batch.size)
+                        if (read == AudioRecord.ERROR_INVALID_OPERATION ||
+                            read == AudioRecord.ERROR_BAD_VALUE
+                        ) {
+                            break
+                        }
+                        if (read > 0) {
+                            inputGainNormalizer.applyInPlace(batch, read)
+                            ringBuffer.write(batch, 0, read)
+                        }
                     }
-                    if (read > 0) {
-                        inputGainNormalizer.applyInPlace(batch, read)
-                        ringBuffer.write(batch, 0, read)
-                    }
+                } catch (_: Throwable) {
+                    // Ignore recording failure, will retry
+                } finally {
+                    releaseRecordingResources(record)
                 }
-            } finally {
-                releaseRecordingResources(record)
+                if (coroutineContext.isActive) {
+                    delay(500)
+                }
             }
         } finally {
             audioRouting.endHandsFreeMicRoute()
@@ -274,7 +337,10 @@ class EarService : Service() {
     }
 
     companion object {
-        private const val TAG = "HandyEarService"
+        @Volatile
+        var activeInstance: EarService? = null
+            private set
+
         private const val CHANNEL_ID = "ear_listening_channel"
         private const val ACTION_STOP = "cz.handy.core.audio.ACTION_STOP_LISTENING"
         private const val ACTION_UPDATE_FOREGROUND_UI_STATE =
@@ -283,16 +349,10 @@ class EarService : Service() {
         private const val NOTIFICATION_ID = 7134
         private const val CAPTURE_READ_SHORTS = 2048
 
-        /**
-         * Spustí foreground službu; při odmítnutí systémem (oprávnění, OEM) nepropaguje výjimku do UI.
-         *
-         * @return `true` pokud byl intent odeslán bez výjimky
-         */
-        fun start(context: Context): Boolean =
-            runForegroundServiceIntent(
-                context,
-                Intent(context.applicationContext, EarService::class.java),
-            )
+        fun start(context: Context) {
+            val app = context.applicationContext
+            app.startForegroundService(Intent(app, EarService::class.java))
+        }
 
         /**
          * Aktualizuje titulek a text notifikace podle fáze dialogu ([F1-T20]).
@@ -301,30 +361,27 @@ class EarService : Service() {
         fun notifyForegroundUiState(
             context: Context,
             state: EarForegroundUiState,
-        ): Boolean =
-            runForegroundServiceIntent(
-                context,
-                Intent(context.applicationContext, EarService::class.java).apply {
+        ) {
+            val app = context.applicationContext
+            app.startForegroundService(
+                Intent(app, EarService::class.java).apply {
                     action = ACTION_UPDATE_FOREGROUND_UI_STATE
                     putExtra(EXTRA_FOREGROUND_UI_STATE, state.name)
                 },
             )
-
-        private fun runForegroundServiceIntent(
-            context: Context,
-            intent: Intent,
-        ): Boolean =
-            runCatching {
-                context.applicationContext.startForegroundService(intent)
-            }.onFailure { e ->
-                Log.w(TAG, "Foreground service intent rejected: ${e.javaClass.simpleName}", e)
-            }.isSuccess
+        }
 
         fun stop(context: Context) {
+            val inst = activeInstance
+            if (inst != null) {
+                inst.stopCaptureAndTeardown()
+            }
             val app = context.applicationContext
-            app.startService(
-                Intent(app, EarService::class.java).setAction(ACTION_STOP),
-            )
+            runCatching {
+                app.startService(
+                    Intent(app, EarService::class.java).setAction(ACTION_STOP),
+                )
+            }
         }
     }
 }

@@ -39,6 +39,36 @@ Thumbs.db
 *.jks
 *.keystore
 
+# AI/ML Models
+*.onnx
+*.tflite
+
 # Detekt reports (generated)
 **/detekt-reports/
 
+
+# Local secrets / PC companion (never GitHub)
+local-secret/
+.env
+.env.*
+*.pem
+tailscale-authkey*
+
+# Crash logs & debug dumps (never commit)
+crash/
+**/crash/
+*last-crash*.txt
+logcat.txt
+telemetry.txt
+
+# --- public-safe: never ship weights or local vendor files ---
+*.onnx
+*.tflite
+*.ppn
+*.tar.bz2
+*.keystore
+local.properties
+_onnx_backup/
+sherpa-onnx-streaming-zipformer*/
+DEBUG_STATUS.md
+script.py

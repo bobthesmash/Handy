@@ -2,6 +2,7 @@ package cz.handy.app
 
 import android.app.Application
 import android.util.Log
+import cz.handy.app.crash.DeviceCrashLogger
 import cz.handy.feature.wakeword.PorcupineEarWakePump
 import cz.handy.feature.wakeword.WakeWordEnginesProbe
 import dagger.hilt.android.HiltAndroidApp
@@ -24,6 +25,7 @@ class HandyApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        DeviceCrashLogger.install(this)
         PorcupineEarWakePump.startIfAccessKeyConfigured(this, appScope)
         if (BuildConfig.DEBUG) {
             Log.d(APP_TAG, "Scheduling F0-T05 WakeWordEnginesProbe")

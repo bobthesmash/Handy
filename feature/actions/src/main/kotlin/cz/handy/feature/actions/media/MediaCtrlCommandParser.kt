@@ -12,6 +12,7 @@ object MediaCtrlCommandParser {
                 c.contains("předešl") ||
                 c.contains("zpátky") ||
                 c.contains("zpět") ||
+                c.contains("go back") ||
                 c.contains("previous") -> MediaTransportCommand.Previous
 
             c.contains("další") ||

@@ -13,7 +13,7 @@ class DeviceInfoAnswersTest {
         val instant = Instant.parse("2026-05-15T10:05:00Z")
         val zone = ZoneId.of("Europe/Prague")
         val clock = Clock.fixed(instant, zone)
-        assertEquals("Je 12:05.", DeviceInfoAnswers.timeSentence(clock))
+        assertEquals("It is 12:05 PM.", DeviceInfoAnswers.timeSentence(clock))
     }
 
     @Test
@@ -23,6 +23,6 @@ class DeviceInfoAnswersTest {
         val clock = Clock.fixed(instant, zone)
         val s = DeviceInfoAnswers.dateSentence(zone, clock)
         assertTrue(s.contains("2026"), "expected year in $s")
-        assertTrue(s.startsWith("Je "), s)
+        assertTrue(s.startsWith("It is "), s)
     }
 }

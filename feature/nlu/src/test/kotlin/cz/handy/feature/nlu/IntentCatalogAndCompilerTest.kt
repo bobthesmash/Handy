@@ -33,6 +33,8 @@ class IntentCatalogAndCompilerTest {
                 "SET_CONTACT_ALIAS",
                 "REMOVE_CONTACT_ALIAS",
                 "MEDIA_CTRL",
+                "UNLOCK_SCREEN",
+                "CONFIRM",
             ),
             HandyNluCatalogs.mvp.intentIds,
         )
@@ -117,5 +119,14 @@ class IntentCatalogAndCompilerTest {
         assertNotNull(m)
         assertEquals("jan", m.groupValues[1])
         assertEquals("ahoj tamní svět", m.groupValues[2])
+    }
+
+    @Test
+    fun compiler_staticSlot_mapsValue() {
+        val spec = PhraseTemplateCompiler.compile("louder{operation=up}")
+        assertEquals(emptyList(), spec.orderedSlotNames)
+        assertEquals(mapOf("operation" to "up"), spec.staticSlots)
+        assertNotNull(spec.regex.matchEntire("louder"))
+        assertNull(spec.regex.matchEntire("louder up"))
     }
 }

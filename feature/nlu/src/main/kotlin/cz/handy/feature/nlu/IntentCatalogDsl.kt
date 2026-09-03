@@ -98,7 +98,7 @@ class IntentSpec internal constructor(
         val matchers = templates.map { PhraseTemplateCompiler.compile(it) }
         val discovered =
             matchers
-                .flatMap { it.orderedSlotNames }
+                .flatMap { it.orderedSlotNames + it.staticSlots.keys }
                 .toSet()
 
         val slotRequired = LinkedHashMap<String, Boolean>()

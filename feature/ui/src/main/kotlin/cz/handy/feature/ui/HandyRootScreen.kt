@@ -14,6 +14,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import android.app.Activity
+import android.app.NotificationManager
+import android.content.Context
+import androidx.compose.material3.ButtonDefaults
+import kotlin.system.exitProcess
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -249,6 +254,8 @@ private fun HandyGreeting(
     assistant: HandyAssistantViewModel?,
     showCommandPipelineUi: Boolean,
 ) {
+    val context = LocalContext.current
+
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
             modifier =
@@ -297,6 +304,22 @@ private fun HandyGreeting(
                 Text(text = stringResource(R.string.open_settings))
             }
 
+            Spacer(Modifier.height(16.dp))
+
+            Button(
+                onClick = { fullyKillHandy(context, assistant) },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error,
+                    contentColor = MaterialTheme.colorScheme.onError,
+                ),
+                modifier = Modifier.fillMaxWidth(0.85f),
+            ) {
+                Text(
+                    text = "KILL HANDY (FULL STOP)",
+                    style = MaterialTheme.typography.labelLarge,
+                )
+            }
+
             if (showDebugEntry) {
                 Spacer(Modifier.height(12.dp))
 
@@ -314,6 +337,24 @@ private fun HandyGreeting(
             }
         }
     }
+}
+
+private fun fullyKillHandy(context: Context, assistant: HandyAssistantViewModel?) {
+    runCatching { assistant?.fullyShutdown() }
+    runCatching { EarService.stop(context.applicationContext) }
+    runCatching {
+        val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+        nm?.cancelAll()
+    }
+    if (context is Activity) {
+        context.finishAffinity()
+        context.finishAndRemoveTask()
+    }
+    // Allow AMS and audio server a brief window to complete stopForeground and audio release
+    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+        android.os.Process.killProcess(android.os.Process.myPid())
+        exitProcess(0)
+    }, 300)
 }
 
 @Composable

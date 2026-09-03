@@ -23,6 +23,10 @@ internal object PhoneSlotResolver {
         ) {
             return null
         }
+        val fuzzy = DeviceContactFuzzyResolver.findClosestContact(app, expanded)
+        if (fuzzy != null) {
+            return fuzzy.telUri
+        }
         return ContactDialUriLookup.tryTelUri(app.contentResolver, expanded)
     }
 
