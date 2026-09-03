@@ -165,8 +165,8 @@ class AndroidCzechSpeechSynthesizer(
     }
 
     private fun applyPreferredLanguage(engine: TextToSpeech) {
-        val cs = Locale.forLanguageTag("cs-CZ")
-        when (engine.setLanguage(cs)) {
+        val en = Locale.US
+        when (engine.setLanguage(en)) {
             TextToSpeech.LANG_MISSING_DATA,
             TextToSpeech.LANG_NOT_SUPPORTED,
             -> engine.setLanguage(Locale.getDefault())

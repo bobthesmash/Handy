@@ -10,10 +10,12 @@ import androidx.lifecycle.viewModelScope
 import cz.handy.core.audio.EarAudioBridge
 import cz.handy.core.common.audio.AsrHypothesisConfidence
 import cz.handy.core.common.dialog.DialogManager
+import cz.handy.core.common.dialog.DialogPhase
 import cz.handy.core.persistence.HandyLocalTelemetry
 import cz.handy.core.persistence.LocalTelemetryPreferences
 import cz.handy.core.persistence.PipelineLatencyTracer
 import cz.handy.feature.actions.executor.MvpIntentExecutor
+import cz.handy.feature.actions.phone.DeviceContactFuzzyResolver
 import cz.handy.feature.asr.SherpaStreamingRecognizerHolder
 import cz.handy.feature.nlu.ChainedUtteranceParsers
 import cz.handy.feature.nlu.HandyNluCatalogs
@@ -91,6 +93,12 @@ class HandyAssistantViewModel(
 
     private val micFeedAllowed = AtomicBoolean(false)
 
+    /** Drop mic into Sherpa while TTS is playing, otherwise we hear ourselves. */
+    private val ignoreMicForTts = AtomicBoolean(false)
+
+    /** Standby mode: when in standby, only Wake Word activates the assistant. */
+    private val isStandby = AtomicBoolean(false)
+
     /** Začátek tahu (pro lokální telemetrii latence [F2-T13]). */
     private var pendingTurnStartElapsed: Long? = null
 
@@ -136,8 +144,12 @@ class HandyAssistantViewModel(
     init {
         viewModelScope.launch(Dispatchers.Default + heavyModelExceptionHandler) {
             WakeWordSignalBus.wakes.collect {
-                noteWakeWordForHeavyModels()
+                onWakeDetected()
             }
+        }
+        // No Picovoice: start ASR once. Do not loop — restarting every second kills the utterance.
+        viewModelScope.launch(Dispatchers.Default) {
+            noteWakeWordForHeavyModels()
         }
     }
 
@@ -222,8 +234,32 @@ class HandyAssistantViewModel(
     }
 
     /**
+     * Zavolá se ihned při detekci wake-wordu:
+     * - Posune DialogManager stav (onWakeDetected)
+     * - Okamžitě vysloví "Hi" (QUEUE_FLUSH přes speakLine s ignoreMicForTts) bez čekání na ASR
+     * - Asynchronně přednačte Sherpa ASR model
+     */
+    fun onWakeDetected() {
+        isStandby.set(false)
+        _pendingDestructive.value = null
+        if (dialog.phase.value != DialogPhase.Idle) {
+            dialog.resetToIdle()
+        }
+        val ring = EarAudioBridge.ringBufferOrNull()
+        if (ring != null) {
+            pcmConsumeMarker = ring.totalSamplesWritten()
+        }
+        runCatching { sherpaHolder.peek()?.startUtterance() }
+        dialog.onWakeDetected()
+        viewModelScope.launch(Dispatchers.Main.immediate) {
+            _toastLine.value = "Hi"
+            speakLine("Hi")
+        }
+        noteWakeWordForHeavyModels()
+    }
+
+    /**
      * Zavolá pipeline po wake-wordu: přednačte Sherpu (lazy), ECAPA zůstává lazy až do verify ([F3-T05]).
-     * Po [HEAVY_MODEL_IDLE_MINUTES] bez další aktivity se uvolní paměť.
      */
     fun noteWakeWordForHeavyModels() {
         viewModelScope.launch(Dispatchers.Default + heavyModelExceptionHandler) {
@@ -233,10 +269,7 @@ class HandyAssistantViewModel(
             PipelineLatencyTracer.markSherpaRecognizerReady(rec != null)
             if (rec != null) {
                 startMicFeedToSherpa()
-            } else {
-                stopMicFeed()
             }
-            scheduleHeavyModelsIdleRelease()
         }
     }
 
@@ -246,11 +279,18 @@ class HandyAssistantViewModel(
             dialog.onUserRejected()
             _pendingDestructive.value = null
             pendingTurnStartElapsed = null
-            val line = "Akce zrušena."
+            val line = "Action cancelled."
             lastSpokenLine = line
             _toastLine.value = line
-            speech.speak(line) { }
+            speakLine(line)
         }
+    }
+
+    fun fullyShutdown() {
+        cancelHeavyModelsIdleRelease()
+        releaseHeavyInferenceSessions()
+        speech.shutdown()
+        dialog.resetToIdle()
     }
 
     override fun onCleared() {
@@ -266,12 +306,9 @@ class HandyAssistantViewModel(
     }
 
     private fun scheduleHeavyModelsIdleRelease() {
+        // Do not release mic feed or inference sessions on idle timeout.
+        // Assistant stays active and listening indefinitely until user force-stops the app.
         cancelHeavyModelsIdleRelease()
-        heavyModelsIdleJob =
-            viewModelScope.launch {
-                delay(TimeUnit.MINUTES.toMillis(HEAVY_MODEL_IDLE_MINUTES))
-                releaseHeavyInferenceSessions()
-            }
     }
 
     private fun releaseHeavyInferenceSessions() {
@@ -290,7 +327,7 @@ class HandyAssistantViewModel(
 
     private fun startMicFeedToSherpa() {
         stopMicFeed()
-        val rec = sherpaHolder.peek() ?: return
+        val rec = sherpaHolder.acquire() ?: return
         runCatching { rec.startUtterance() }
             .onFailure {
                 return
@@ -299,40 +336,53 @@ class HandyAssistantViewModel(
             !simulateVoicePipelineBypass &&
             embeddingStore.hasSpeakerProfile()
         phraseTurnPcmChunks.clear()
-        val ring = EarAudioBridge.ringBufferOrNull() ?: return
-        pcmConsumeMarker = ring.totalSamplesWritten()
+        val ring = EarAudioBridge.ringBufferOrNull()
+        pcmConsumeMarker = ring?.totalSamplesWritten() ?: 0L
         micFeedAllowed.set(true)
         micFeedJob =
             viewModelScope.launch(Dispatchers.Default + heavyModelExceptionHandler) {
                 while (isActive && micFeedAllowed.get()) {
-                    if (!micFeedAllowed.get()) {
-                        break
+                    val r = sherpaHolder.peek() ?: sherpaHolder.acquire()
+                    if (r == null) {
+                        delay(200)
+                        continue
                     }
-                    val r = sherpaHolder.peek() ?: break
-                    val buffer = EarAudioBridge.ringBufferOrNull() ?: break
+                    val buffer = EarAudioBridge.ringBufferOrNull()
+                    if (buffer == null) {
+                        delay(200)
+                        continue
+                    }
                     val (chunk, newMark) = buffer.consumeMono16SinceTotalWritten(pcmConsumeMarker)
                     pcmConsumeMarker = newMark
                     if (chunk.isNotEmpty() && micFeedAllowed.get()) {
+                        if (ignoreMicForTts.get()) {
+                            delay(MIC_FEED_POLL_MS)
+                            continue
+                        }
                         appendPhraseTurnChunk(chunk)
                         val tick = r.appendPcm16Mono(chunk)
                         if (tick.text.isNotBlank()) {
                             PipelineLatencyTracer.markFirstAsrPartial(true)
                         }
-                        if (tick.endpoint && tick.text.isNotBlank()) {
-                            val pcmSnapshot =
-                                if (capturePhraseTurnPcm) {
-                                    drainPhraseTurnPcm()
-                                } else {
-                                    null
+                        if (tick.endpoint) {
+                            val heard = tick.text.trim()
+                            if (heard.isNotBlank()) {
+                                val pcmSnapshot =
+                                    if (capturePhraseTurnPcm) {
+                                        drainPhraseTurnPcm()
+                                    } else {
+                                        null
+                                    }
+                                capturePhraseTurnPcm = false
+                                withContext(Dispatchers.Main.immediate) {
+                                    submitRecognizedPhrase(
+                                        heard,
+                                        tick.minTokenProb,
+                                        pcmSnapshot,
+                                    )
                                 }
-                            capturePhraseTurnPcm = false
-                            withContext(Dispatchers.Main.immediate) {
-                                submitRecognizedPhrase(
-                                    tick.text,
-                                    tick.minTokenProb,
-                                    pcmSnapshot,
-                                )
                             }
+                            runCatching { r.startUtterance() }
                         }
                     }
                     delay(MIC_FEED_POLL_MS)
@@ -373,19 +423,82 @@ class HandyAssistantViewModel(
             _toastLine.value = "Prázdný text."
             return
         }
-        if (AsrHypothesisConfidence.shouldAskRepeat(trimmed, minTokenProb)) {
-            speech.stop()
-            dialog.resetToIdle()
-            _pendingDestructive.value = null
-            pendingTurnStartElapsed = null
-            telemetry.recordLowConfidenceAsrRetry()
-            val line = "Neslyšel jsem, opakuj."
-            lastSpokenLine = line
-            _toastLine.value = line
-            speech.speak(line) { }
+        if (looksLikeOwnTts(trimmed)) {
             return
         }
+        if (AsrHypothesisConfidence.shouldAskRepeat(trimmed, minTokenProb)) {
+            telemetry.recordLowConfidenceAsrRetry()
+            // Do not TTS "opakuj" — always-on mic hears it as REPEAT forever.
+        }
         pendingTurnStartElapsed = SystemClock.elapsedRealtime()
+
+        val lowerTranscript = trimmed.lowercase().trim()
+        val cleaned = lowerTranscript.removeSuffix("!").removeSuffix(".").trim()
+
+        val isWakePhrase =
+            cleaned == "wake up handy" ||
+                cleaned == "wake up" ||
+                cleaned == "hey handy" ||
+                cleaned == "hi handy" ||
+                cleaned == "hello handy" ||
+                cleaned == "handy" ||
+                cleaned == "vzbudi se" ||
+                cleaned == "probud se" ||
+                cleaned.startsWith("wake up handy") ||
+                cleaned.startsWith("hey handy")
+
+        if (isWakePhrase) {
+            onWakeDetected()
+            return
+        }
+
+        // When in STANDBY: stop command ASR, keep ONLY wake detector, ignore other speech
+        if (isStandby.get()) {
+            return
+        }
+
+        // Safe word MUTE: match "mute" only, not "mute!"
+        val isMuteStandbyPhrase = lowerTranscript == "mute"
+        if (isMuteStandbyPhrase) {
+            isStandby.set(true)
+            _pendingDestructive.value = null
+            dialog.resetToIdle()
+            val line = "See you."
+            lastSpokenLine = line
+            _toastLine.value = "STANDBY (say 'Wake up Handy')"
+            speakLine(line)
+            val ring = EarAudioBridge.ringBufferOrNull()
+            if (ring != null) {
+                pcmConsumeMarker = ring.totalSamplesWritten()
+            }
+            runCatching { sherpaHolder.peek()?.startUtterance() }
+            return
+        }
+
+        val pending = _pendingDestructive.value
+        if (pending != null) {
+            val isConfirm = lowerTranscript == "yes" || lowerTranscript == "ok" || lowerTranscript == "okay" ||
+                lowerTranscript == "yep" || lowerTranscript == "yeah" || lowerTranscript == "sure" ||
+                lowerTranscript == "do it" || lowerTranscript == "ano" || lowerTranscript == "jo" ||
+                lowerTranscript.startsWith("yes ") || lowerTranscript.startsWith("ok ") ||
+                lowerTranscript.startsWith("ano ") || lowerTranscript.startsWith("jo ")
+            val isCancel = lowerTranscript == "no" || lowerTranscript == "cancel" || lowerTranscript == "abort" ||
+                lowerTranscript == "stop" || lowerTranscript == "ne" || lowerTranscript == "zruš" ||
+                lowerTranscript == "nechci" || lowerTranscript.startsWith("no ") ||
+                lowerTranscript.startsWith("cancel ") || lowerTranscript.startsWith("ne ")
+
+            if (isConfirm) {
+                _pendingDestructive.value = null
+                dialog.onUserConfirmed()
+                dispatchExec(pending, destructiveSmsConfirmed = true)
+                return
+            } else if (isCancel) {
+                _pendingDestructive.value = null
+                dialog.onUserRejected()
+                finishMetaAssistantLine("Action cancelled.")
+                return
+            }
+        }
 
         if (!simulateVoicePipelineBypass && !embeddingStore.hasSpeakerProfile()) {
             pendingTurnStartElapsed = null
@@ -397,7 +510,7 @@ class HandyAssistantViewModel(
                 )
             lastSpokenLine = line
             _toastLine.value = line
-            speech.speak(line) { }
+            speakLine(line)
             return
         }
 
@@ -430,9 +543,51 @@ class HandyAssistantViewModel(
 
                 is NluResult.Matched -> {
                     when (out.intent.intentId) {
-                        "CANCEL" -> finishMetaAssistantLine("Zrušeno.")
-                        "STOP" -> finishMetaAssistantLine("Zastaveno.")
+                        "CANCEL" -> finishMetaAssistantLine("Action cancelled.")
+                        "STOP" -> finishMetaAssistantLine("Stopped.")
                         "REPEAT" -> finishMetaAssistantLine(repeatLineOrFallback())
+                        "CALL" -> {
+                            val rawContact = out.intent.slots["contact"].orEmpty()
+                            val matched = DeviceContactFuzzyResolver.findClosestContact(getApplication(), rawContact)
+                            val displayName = matched?.displayName ?: rawContact
+                            val updatedIntent = if (matched != null) {
+                                out.intent.copy(
+                                    slots = out.intent.slots + mapOf(
+                                        "contact" to matched.displayName,
+                                        "telUri" to matched.telUri.toString(),
+                                        "number" to matched.phoneNumber,
+                                    ),
+                                )
+                            } else {
+                                out.intent
+                            }
+                            _pendingDestructive.value = updatedIntent
+                            dialog.onNluComplete(requiresConfirm = true)
+                            val prompt = "Calling $displayName, ok?"
+                            _toastLine.value = prompt
+                            speakLine(prompt)
+                        }
+                        "SEND_SMS" -> {
+                            val rawContact = out.intent.slots["contact"].orEmpty()
+                            val matched = DeviceContactFuzzyResolver.findClosestContact(getApplication(), rawContact)
+                            val displayName = matched?.displayName ?: rawContact
+                            val updatedIntent = if (matched != null) {
+                                out.intent.copy(
+                                    slots = out.intent.slots + mapOf(
+                                        "contact" to matched.displayName,
+                                        "telUri" to matched.telUri.toString(),
+                                        "number" to matched.phoneNumber,
+                                    ),
+                                )
+                            } else {
+                                out.intent
+                            }
+                            _pendingDestructive.value = updatedIntent
+                            dialog.onNluComplete(requiresConfirm = true)
+                            val prompt = "Texting $displayName, ok?"
+                            _toastLine.value = prompt
+                            speakLine(prompt)
+                        }
                         else -> {
                             dialog.onNluComplete(out.intent.requiresConfirm)
                             if (out.intent.requiresConfirm) {
@@ -468,7 +623,7 @@ class HandyAssistantViewModel(
             val line = app.getString(R.string.assistant_voice_gate_audio_short)
             lastSpokenLine = line
             _toastLine.value = line
-            speech.speak(line) { }
+            speakLine(line)
             return false
         }
 
@@ -505,7 +660,7 @@ class HandyAssistantViewModel(
                 }
             lastSpokenLine = line
             _toastLine.value = line
-            speech.speak(line) { }
+            speakLine(line)
             return false
         }
         return when (verdictResult.getOrThrow()) {
@@ -519,7 +674,7 @@ class HandyAssistantViewModel(
                 val line = app.getString(R.string.assistant_voice_uncertain_repeat)
                 lastSpokenLine = line
                 _toastLine.value = line
-                speech.speak(line) { }
+                speakLine(line)
                 false
             }
 
@@ -531,7 +686,7 @@ class HandyAssistantViewModel(
                 val line = app.getString(R.string.assistant_voice_rejected)
                 lastSpokenLine = line
                 _toastLine.value = line
-                speech.speak(line) { }
+                speakLine(line)
                 false
             }
         }
@@ -592,7 +747,32 @@ class HandyAssistantViewModel(
         dialog.onExecComplete()
         lastSpokenLine = ack
         _toastLine.value = ack
-        speech.speak(ack) { dialog.onTtsComplete() }
+        speakLine(ack) { dialog.onTtsComplete() }
+    }
+
+
+    private fun looksLikeOwnTts(text: String): Boolean {
+        val last = lastSpokenLine?.lowercase()?.trim().orEmpty()
+        val heard = text.lowercase().trim()
+        if (last.isNotEmpty() && heard == last) return true
+        if (last.length < 4) return false
+        if (heard.contains(last)) return true
+        if (last.contains(heard) && heard.length >= 4) return true
+        return false
+    }
+
+    private fun speakLine(line: String, onDone: () -> Unit = {}) {
+        ignoreMicForTts.set(true)
+        lastSpokenLine = line
+        speech.speak(line) {
+            val ring = EarAudioBridge.ringBufferOrNull()
+            if (ring != null) {
+                pcmConsumeMarker = ring.totalSamplesWritten()
+            }
+            runCatching { sherpaHolder.peek()?.startUtterance() }
+            ignoreMicForTts.set(false)
+            onDone()
+        }
     }
 
     private fun repeatLineOrFallback(): String = lastSpokenLine?.takeIf { it.isNotBlank() } ?: "Nemám co opakovat."
@@ -603,7 +783,7 @@ class HandyAssistantViewModel(
         pendingTurnStartElapsed = null
         lastSpokenLine = line
         _toastLine.value = line
-        speech.speak(line) { }
+        speakLine(line)
     }
 
     private companion object {

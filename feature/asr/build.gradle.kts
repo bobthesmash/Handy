@@ -28,6 +28,15 @@ android {
     lint {
         abortOnError = true
     }
+
+    // Sherpa-onnx AAR bundles a stripped libonnxruntime.so that lacks symbols
+    // (e.g. OrtGetApiBase) required by Microsoft's onnxruntime-android JNI bridge.
+    // We exclude it here so only the full Microsoft .so is packaged in the APK.
+    packaging {
+        jniLibs {
+            excludes += "**/libonnxruntime.so"
+        }
+    }
 }
 
 kotlin {

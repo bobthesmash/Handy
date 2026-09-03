@@ -82,11 +82,12 @@ kotlin {
 }
 
 dependencies {
+    implementation(libs.onnxruntime.android)
     implementation(project(":core:common"))
     implementation(project(":core:audio"))
+    implementation(project(":feature:voiceid"))
     implementation(project(":feature:wakeword"))
     implementation(project(":feature:asr"))
-    implementation(project(":feature:voiceid"))
     implementation(project(":feature:nlu"))
     implementation(project(":feature:actions"))
     implementation(project(":feature:tts"))

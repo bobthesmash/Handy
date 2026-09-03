@@ -14,12 +14,12 @@ import java.util.Locale
  * Odpovědi pro info intenty bez systémové akce ([F2-T07]) — čas, datum, stav baterie.
  */
 object DeviceInfoAnswers {
-    private val CS = Locale.forLanguageTag("cs-CZ")
+    private val EN = Locale.US
 
     fun timeSentence(clock: Clock = Clock.systemDefaultZone()): String {
         val z = ZonedDateTime.now(clock)
-        val fmt = DateTimeFormatter.ofPattern("H:mm", CS)
-        return "Je ${z.format(fmt)}."
+        val fmt = DateTimeFormatter.ofPattern("h:mm a", EN)
+        return "It is ${z.format(fmt)}."
     }
 
     fun dateSentence(
@@ -27,16 +27,16 @@ object DeviceInfoAnswers {
         clock: Clock = Clock.system(zone),
     ): String {
         val z = ZonedDateTime.now(clock)
-        val fmt = DateTimeFormatter.ofPattern("EEEE d. MMMM yyyy", CS)
-        return "Je ${z.format(fmt)}."
+        val fmt = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy", EN)
+        return "It is ${z.format(fmt)}."
     }
 
     fun batterySentence(context: Context): Result<String> {
         val pct =
             readBatteryPercent(context) ?: return Result.failure(
-                IllegalStateException("Nepodařilo se přečíst stav baterie."),
+                IllegalStateException("Could not read battery level."),
             )
-        return Result.success("Baterie je na $pct procentech.")
+        return Result.success("Battery is at $pct percent.")
     }
 
     private fun readBatteryPercent(context: Context): Int? {

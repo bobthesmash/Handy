@@ -19,4 +19,5 @@ internal data class IntentDefinition(
 internal data class PhraseMatcherSpec(
     val regex: Regex,
     val orderedSlotNames: List<String>,
+    val staticSlots: Map<String, String> = emptyMap(),
 )

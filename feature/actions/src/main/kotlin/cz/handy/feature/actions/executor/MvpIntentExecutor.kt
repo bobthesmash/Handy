@@ -2,6 +2,7 @@ package cz.handy.feature.actions.executor
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.net.Uri
 import cz.handy.core.persistence.ContactAliasStore
 import cz.handy.feature.actions.alarm.AlarmClockIntentStarter
 import cz.handy.feature.actions.alarm.AlarmSlotTimeParser
@@ -62,6 +63,8 @@ class MvpIntentExecutor(
             "TIMER" -> execTimer(parsed)
             "SET_CONTACT_ALIAS" -> execSetContactAlias(parsed)
             "REMOVE_CONTACT_ALIAS" -> execRemoveContactAlias(parsed)
+            "UNLOCK_SCREEN" -> execUnlockScreen()
+            "CONFIRM" -> Result.success("OK.")
             else ->
                 Result.failure(
                     UnsupportedOperationException("Neznámý intent: ${parsed.intentId}"),
@@ -70,10 +73,16 @@ class MvpIntentExecutor(
 
     private fun execCall(parsed: ParsedIntent): Result<String> {
         val contact = parsed.slots["contact"].orEmpty()
+        val telUri = parsed.slots["telUri"]
+        if (!telUri.isNullOrBlank()) {
+            callPlacer.placeCallUri(Uri.parse(telUri))
+                .onFailure { return Result.failure(it) }
+            return Result.success("Calling $contact...")
+        }
         callPlacer
             .placeOutgoingCall(contact)
             .onFailure { return Result.failure(it) }
-        return Result.success("Spouštím hovor…")
+        return Result.success("Calling $contact...")
     }
 
     private fun execSms(
@@ -82,10 +91,12 @@ class MvpIntentExecutor(
     ): Result<String> {
         val contact = parsed.slots["contact"].orEmpty()
         val message = parsed.slots["message"].orEmpty()
+        val number = parsed.slots["number"]
+        val target = if (!number.isNullOrBlank()) number else contact
         smsSender
-            .sendTextMessage(smsExplicitConfirm, contact, message)
+            .sendTextMessage(smsExplicitConfirm, target, message)
             .onFailure { return Result.failure(it) }
-        return Result.success("SMS odeslána.")
+        return Result.success("SMS sent.")
     }
 
     private fun execAlarm(parsed: ParsedIntent): Result<String> {
@@ -108,31 +119,9 @@ class MvpIntentExecutor(
         }
     }
 
-    @Suppress("CyclomaticComplexMethod")
     private fun execVolume(parsed: ParsedIntent): Result<String> {
         val rawOp = parsed.slots["operation"]?.trim().orEmpty()
-
-        /** Druhá šablona intentu bez slotu ⇒ znamená mute. */
-        if (parsed.slots.isEmpty() || rawOp.isEmpty()) {
-            return Result.success(volumeAdjuster.muteAllMedia())
-        }
-
-        fun isUp(op: String) = op.startsWith("zvyš") || op.startsWith("zvýš") || op.startsWith("zvěš")
-
-        fun isDown(op: String) = op.startsWith("sniž") || op.startsWith("sníž")
-
-        return Result.success(
-            when {
-                isUp(rawOp) -> volumeAdjuster.volumeUp()
-                isDown(rawOp) -> volumeAdjuster.volumeDown()
-                rawOp.startsWith("ztiš") ||
-                    rawOp.contains("mute") -> volumeAdjuster.muteAllMedia()
-                else ->
-                    return Result.failure(
-                        IllegalArgumentException("Neplatná změna hlasitosti: $rawOp"),
-                    )
-            },
-        )
+        return Result.success(volumeAdjuster.adjust(rawOp))
     }
 
     private fun execReadNotification(): Result<String> {
@@ -221,14 +210,23 @@ class MvpIntentExecutor(
     }
 
     private fun execRemoveContactAlias(parsed: ParsedIntent): Result<String> {
-        val alias = parsed.slots["alias"]?.trim().orEmpty()
-        if (alias.isEmpty()) {
-            return Result.failure(
-                IllegalArgumentException("Řekni například „smaž alias bratr“."),
-            )
-        }
+        val alias = parsed.slots["alias"].orEmpty().trim()
+        if (alias.isEmpty()) return Result.failure(IllegalArgumentException("Chybí alias pro smazání."))
         contactAliases.remove(alias)
-        return Result.success("Alias „$alias“ je smazaný.")
+        return Result.success("Alias $alias byl smazán.")
+    }
+
+    private fun execUnlockScreen(): Result<String> {
+        return try {
+            val intent = android.content.Intent(app, Class.forName("cz.handy.app.MainActivity")).apply {
+                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                putExtra("WAKE_UP_PHONE", true)
+            }
+            app.startActivity(intent)
+            Result.success("Obrazovka zapnuta.")
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     private fun execTorch(parsed: ParsedIntent): Result<String> {
@@ -242,7 +240,11 @@ class MvpIntentExecutor(
             m.startsWith("zhas") ||
                 m.startsWith("vypni") ||
                 m.startsWith("vypn") ||
-                m.startsWith("vypí")
+                m.startsWith("vypí") ||
+                m == "off" ||
+                m.startsWith("off ") ||
+                m.contains("turn off") ||
+                m == "disable"
 
         fun wantsOn(m: String) =
             m.startsWith("zapni") ||
@@ -250,7 +252,11 @@ class MvpIntentExecutor(
                 m.startsWith("zapín") ||
                 m.startsWith("zvyš") ||
                 m.startsWith("zvýš") ||
-                m.startsWith("rozsv")
+                m.startsWith("rozsv") ||
+                m == "on" ||
+                m.startsWith("on ") ||
+                m.contains("turn on") ||
+                m == "enable"
 
         val on = wantsOn(mode)
         val off = wantsOff(mode)
@@ -274,7 +280,7 @@ class MvpIntentExecutor(
             .setTorch(wantOn)
             .onFailure { return Result.failure(it) }
         return Result.success(
-            if (wantOn) "Svítilna zapnutá." else "Svítilna vypnutá.",
+            if (wantOn) "Flashlight on." else "Flashlight off.",
         )
     }
 }

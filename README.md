@@ -1,103 +1,133 @@
 # Handy
 
-[![CI](https://github.com/bobthesmash/Handy/actions/workflows/ci.yml/badge.svg)](https://github.com/bobthesmash/Handy/actions/workflows/ci.yml)
+**On-device voice assistant for Android.** Kotlin. The microphone stream never leaves the phone.
 
-Lokální hlasový asistent pro Android (asistivní ovládání, biometrie hlasem, offline provoz). Stav vývoje: `progress.html`.
+This is a public work-in-progress of a full speech stack I run on a Galaxy S23: foreground mic service, streaming ASR, local NLU, speaker-check, TTS, and device actions. It is **not** a Play Store product and **will not speak after a bare clone** — model weights stay out of git on purpose.
 
-## Požadavky
+| You want | Go here |
+| --- | --- |
+| Thirty-second scan | [Why this exists](#why-this-exists) |
+| What actually runs today | [State of the demo](#state-of-the-demo) |
+| How the pipeline is wired | [Architecture](#architecture) |
+| Build / sideload | [Run it](#run-it) |
+| Models, keys, what is *not* in git | [What stays off GitHub](#what-stays-off-github) |
 
-- JDK **17+**
-- Android SDK (API **35** platforma, build-tools **35**)
-- Projekt používá Gradle Wrapper (`./gradlew`)
+---
 
-### Referenční HW (měření / QA)
+## Why this exists
 
-- **Samsung Galaxy S20** (`[D-001]` v `IMPLEMENTATION_PLAN.md`) — výchozí telefon pro latenci (`docs/benchmarks/latency.md`), baterii (`docs/benchmarks/battery.md`), lockscreen matrix (`docs/qa/lockscreen-matrix.md`) a field test. Přesná verze Androidu / One UI se eviduje v tabulkách těchto souborů spolu s měřeními.
-- Oborový kontext k řadě S20: [`docs/device-notes/galaxy-s20.md`](docs/device-notes/galaxy-s20.md) — rejstřík adresáře: [`docs/device-notes/README.md`](docs/device-notes/README.md).
+Most “AI assistants” on a phone are a thin client around someone else’s cloud. Handy is the opposite: a **local pipeline** with hard edges.
 
-## Android Studio (Windows)
+- **Privacy as a constraint, not a slogan.** PCM is captured in a microphone foreground service, held in a 3-second ring buffer, and consumed on-device. There is no speech-to-cloud API in the path.
+- **A real Android problem, not a tutorial.** Wake, ASR, NLU, speaker verify, and actions have to coexist with Samsung battery policy, a lock screen, and a TTS echo that will happily command itself.
+- **Evidence I can hold a messy system.** SaxSmith shows I can ship a web app. Handy is the piece I want a hiring loop to open: JNI, ONNX Runtime, streaming transducers, and Kotlin modules that still compile under CI.
 
-1. Otevři kořen repa **`Handy/`** (ne složku `Android apk/`).
-2. **Sync** → **Run** modul `app`.
-3. První build sám stáhne český Vosk + Silero VAD (`ensureHandyOnnxDevAssets`). Podrobně: [`Android apk/START_HERE.md`](Android%20apk/START_HERE.md).
+If you are skimming for a hire: start at `core/audio` → `feature/asr` → `feature/nlu` → `feature/actions`. If you want the product story, stay on this page.
 
-## Build
+---
 
-```bash
-chmod +x gradlew   # jen na Linux/macOS
-./gradlew ciHandy
+## State of the demo
+
+Honest snapshot (September 2026), Galaxy S23 (`SM-S911B`):
+
+**Works (demonstrated on device)**
+
+- Debug APK sideloads; the old `OrtGetApiBase` crash is gone (ONNX Runtime 1.25).
+- `EarService` keeps a microphone foreground notification.
+- Streaming Sherpa-ONNX ASR is alive.
+- End-to-end: spoken **“what time is it”** → NLU `WHAT_TIME` → English spoken answer, including with the screen off.
+- Local intent catalog also knows battery, date, flashlight, timer, unlock, plus Czech originals (call / SMS / maps). Hit-rate on noisy ASR is still the weak joint.
+
+**Does not work yet (do not pretend)**
+
+- There is **no reliable “Handy” wake word** in this tree. Picovoice is optional and **not required** to read or compile the code. A Picovoice key is not in the repo. Gmail / university mail cannot register on their console anyway. OpenWakeWord assets (`hey_handy.onnx` and friends) are **not** checked in.
+- Closing the UI used to leave the mic up (sticky FGS). The public branch stops the ear on back / task-removed / `onDestroy`. Confirm on a phone before you trust it.
+- Always-on listen still lives partly in the Activity `ViewModel`. The correct home is the ear service. That move is next, not done.
+- There is **no Czech ASR model** in git. The `cs_zipformer_small` slot is a filename from the product target. A public clone without weights will skip recognizer init.
+- This is not a Play listing, not a medical device, not a cloud assistant.
+
+---
+
+## Architecture
+
+```
+mic  →  EarService (FGS, 16 kHz mono ring)
+     →  EarAudioBridge
+     →  wake (optional)  |  streaming ASR (Sherpa zipformer)
+     →  NLU (compiled phrase templates + rule engine)
+     →  speaker gate (ECAPA, only when a profile exists)
+     →  MvpIntentExecutor  →  torch / time / battery / calls / …
+     →  TTS (device engine)
 ```
 
-Kompletní kontrola včetně **release APK a R8** (jako kombinovaný běh v GitHub CI):
+| Stage | Module | Read this first |
+| --- | --- | --- |
+| Capture | `core/audio` | [`EarService.kt`](core/audio/src/main/kotlin/cz/handy/core/audio/EarService.kt) |
+| ASR | `feature/asr` | [`CzZipformerSherpaAssets.kt`](feature/asr/src/main/kotlin/cz/handy/feature/asr/CzZipformerSherpaAssets.kt) |
+| NLU | `feature/nlu` | [`HandyNluCatalogs.kt`](feature/nlu/src/main/kotlin/cz/handy/feature/nlu/HandyNluCatalogs.kt) |
+| Actions | `feature/actions` | [`MvpIntentExecutor.kt`](feature/actions/src/main/kotlin/cz/handy/feature/actions/executor/MvpIntentExecutor.kt) |
+| Voice ID | `feature/voiceid` | ECAPA embedding + Silero VAD (weights not in git) |
+| Wake | `feature/wakeword` | Architecture only until you drop in your own models |
+| UI / dialog | `feature/ui` | [`HandyAssistantViewModel.kt`](feature/ui/src/main/kotlin/cz/handy/feature/ui/pipeline/HandyAssistantViewModel.kt) |
 
-```bash
-./gradlew ciHandyFull
-```
+Modules: `:app` `:core:common` `:core:audio` `:core:persistence` `:feature:wakeword` `:feature:asr` `:feature:voiceid` `:feature:nlu` `:feature:actions` `:feature:tts` `:feature:ui`.
 
-Nebo jen APK:
+<details>
+<summary>Design choices worth arguing about</summary>
+
+- **One `AudioRecord`, many readers.** Wake and ASR share `EarAudioBridge` instead of opening a second capture session (Samsung will otherwise fight you).
+- **NLU is data, not `if (text.contains)` soup.** Phrase templates compile to regex with ordered slots (`PhraseTemplateCompiler`). First match wins, so the catalog order is part of the spec.
+- **Destructive intents confirm.** `CALL` / `SEND_SMS` / `SET_ALARM` require confirm. Speaker-verify can gate them when a centroid exists.
+- **TTS is muted out of ASR.** The assistant will otherwise transcribe “it is three p.m.” and fire `REPEAT`. The ViewModel drops mic into Sherpa while speaking.
+- **Models are a download, not a commit.** A 292 MB encoder in git is a trap for anyone who clones, and a gift to nobody.
+
+</details>
+
+---
+
+## Run it
+
+**You need**
+
+- JDK 17+
+- Android SDK (API 35 / build-tools 35)
+- `local.properties` with `sdk.dir=...` (see `local.properties.example` if present)
+- Optional: your own ONNX weights under `feature/asr/src/main/assets/asr/cs_zipformer_small/` named `encoder.onnx` `decoder.onnx` `joiner.onnx` `tokens.txt`
+- Optional: ECAPA / Silero under `feature/voiceid/src/main/assets/voiceid/`
+- Do **not** commit those files
 
 ```bash
 ./gradlew :app:assembleDebug
-```
-
-### Side-load (ADB)
-
-Po úspěšném `:app:assembleDebug` je APK typicky:
-
-`app/build/outputs/apk/debug/app-debug.apk`
-
-```bash
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
-Nebo jen přetáhni APK do zařízení a otevři ho v souborové aplikaci (u některých OEM povolit „instalovat z neznámých zdrojů“).
-
-### Přehled vývoje
-
-Soubor **`progress.html`** je lokální stavová nástěnka — otevři ho v prohlížeči; můžeš z něj pořídit screenshot pro dokumentaci nebo prezentaci.
-
-**Pro nové přispěvatele (lidi i LLM):** přečtěte **[`COMPLETION_GUIDE.md`](./COMPLETION_GUIDE.md)** — kompaktní mapa toho, co zbývá k release candidate, v jakém pořadí to dělat, a které úkoly jsou blokované HW / rozhodnutími uživatele a **nesmí** se podvrhnout.
-
-### Odznak CI
-
-Soukromý remote: [`bobthesmash/Handy`](https://github.com/bobthesmash/Handy) — badge výše po prvním úspěšném běhu Actions.
-
-### Ochrana soukromí a Play Store (F4-T04)
-
-- **`docs/legal/privacy-policy-cs.md`** a **`docs/legal/privacy-policy-en.md`** — plné znění zásad.
-- **`docs/legal/play-store-data-safety.md`** — orientační podklad pro sekci *Data safety* v Google Play Console.
-- V aplikaci: **Nastavení → Zásady ochrany soukromí** (`PrivacyPolicyScreen`, zkrácený text z `res/raw`).
-
-### Wake word & Picovoice (F0-T05)
-
-- **Produkční runtime:** Porcupine nad mono PCM ze sdíleného audio mostu (`EarAudioBridge` → `PorcupineEarWakePump`); při detekci se volá `noteWakeWordForHeavyModels()` pro spuštění těžších modelů. Vyžaduje `picovoice.access.key` (viz níže).
-- **openWakeWord (experiment):** ONNX váhy do `feature/wakeword/src/main/assets/openwakeword/` — viz **`README.txt`** v té složce; bez souborů zůstane jen Porcupine / benchmark (`WakeWordEnginesProbe`). Rozhodnutí a omezení v **`docs/decisions/0001-wake-word.md`**.
-- **`local.properties`** (necommitovat):
-  ```properties
-  picovoice.access.key=VÁŠ_KLÍČ_Z_PICVOICE_CONSOLE
-  ```
-  Bez něj přeskočí debug benchmark `WakeWordEnginesProbe` (build zůstane zelený).
-- **`INTERNET` permission**: podle dokumentace Picovoice kvůli **validaci přístupového klíče**. Inference mikrofonu zůstává na zařízení — viz **`docs/decisions/0001-wake-word.md`**.
-- **openWakeWord binding:** Maven `xyz.rementia:openwakeword`; výchozí očekávaný klasifikátor `hey_handy.onnx` — přejmenuj nebo uprav `OpenWakeWordEngineFactory`.
-
-### Voice biometrics (ECAPA + VAD)
-
-- **`feature/voiceid/src/main/assets/voiceid/`** — **`README.txt`**: `ecapa_embedding.onnx` a `silero_vad.onnx` (Silero VAD v5 ONNX pro segmentaci řeči); oba záměrně mimo git kvůli velikosti. ADR `docs/decisions/0002-ecapa-speaker-onnx.md`, `docs/decisions/0003-silero-vad-onnx.md`.
-
-**Jedním příkazem (Windows, Python 3 + pip):**
+CI entrypoints on a machine with the SDK:
 
 ```bash
-./gradlew downloadHandyOnnxDevAssets
-# nebo: powershell -ExecutionPolicy Bypass -File scripts/download-handy-onnx-assets.ps1
+./gradlew ciHandy        # checks, ktlint, unit tests
+./gradlew ciHandyFull    # plus release / R8
 ```
 
-ASR pro češtinu: **`asr/vosk_cs_small/`** (Vosk Rhasspy small) — stáhne `downloadHandyOnnxDevAssets`. Složka `asr/cs_zipformer_small/` je jen záložní Sherpa zipformer (dříve RU placeholder).
+**On a Samsung:** Settings → Apps → Handy → Battery → **Unrestricted**, or the ear service will look alive and hear nothing once the screen sleeps.
 
-### ASR (Sherpa‑onnx streaming)
+Spoken phrases the current catalog accepts in English (exact-ish, after punctuation strip): `what time is it`, `battery level`, `what date is it`, `turn on flashlight`, `turn off flashlight`. Czech originals for calls, SMS, navigation, volume still live in the same catalog.
 
-- **JNI / Java API**: `com.xdcobra.sherpa:sherpa-onnx` — verze alias **`sherpaOnnx`** v **`gradle/libs.versions.toml`** (Maven `https://xdcobra.github.io/maven`, jen skupina `com.xdcobra.sherpa`; viz **`docs/decisions/0004-sherpa-onnx-android-asr.md`**).
-- **`feature/asr/src/main/assets/`** — viz **`README.txt`**: ONNX zipformer2 transducer (+ `tokens.txt`) do `asr/cs_zipformer_small/`.
+---
 
-## Licence
+## What stays off GitHub
 
-(doplní vlastník repozitáře)
+| Left out | Why |
+| --- | --- |
+| `*.onnx` `*.tflite` `*.ppn` | Weights and wake keywords. Too big, too easy to leak, useless without a license you own |
+| `local.properties` | SDK path and any `picovoice.access.key` |
+| Keystores / `google-services.json` | Signing and vendor secrets |
+| `sherpa.tar.bz2`, `_onnx_backup/`, unpacked zipformer dumps | Local cache from bringing ASR up. Not source |
+| Crash logs, `DEBUG_STATUS.md` | Device diaries, not the product |
+
+If a file is a secret or a 100 MB blob, it does not belong in a `git add -A`. The `.gitignore` in this branch is written for that.
+
+---
+
+## License
+
+Apache License 2.0. See [LICENSE](LICENSE).

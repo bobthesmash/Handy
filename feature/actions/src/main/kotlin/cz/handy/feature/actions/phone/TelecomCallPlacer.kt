@@ -3,6 +3,7 @@ package cz.handy.feature.actions.phone
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import android.telecom.TelecomManager
 import androidx.annotation.RequiresPermission
@@ -28,6 +29,19 @@ class TelecomCallPlacer(
      * Pro kontaktní řetězce je potřeba **`READ_CONTACTS`** — bez něj se zkusí jen číselný formát slotu.
      */
     @RequiresPermission(Manifest.permission.CALL_PHONE)
+    fun placeCallUri(uri: Uri): Result<Unit> {
+        if (!hasCallPermission()) {
+            return Result.failure(
+                SecurityException("${Manifest.permission.CALL_PHONE}: permission not granted."),
+            )
+        }
+        return runCatching {
+            telecom.placeCall(uri, Bundle.EMPTY)
+            Unit
+        }
+    }
+
+    @RequiresPermission(Manifest.permission.CALL_PHONE)
     fun placeOutgoingCall(contactSlotRaw: String): Result<Unit> {
         if (!hasCallPermission()) {
             return Result.failure(
@@ -43,10 +57,7 @@ class TelecomCallPlacer(
                     ),
                 )
 
-        return runCatching {
-            telecom.placeCall(uri, Bundle.EMPTY)
-            Unit
-        }
+        return placeCallUri(uri)
     }
 
     private fun hasCallPermission(): Boolean =

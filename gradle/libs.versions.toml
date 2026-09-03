@@ -2,6 +2,7 @@
 agp = "8.8.2"
 kotlin = "2.1.10"
 kotlinxCoroutines = "1.9.0"
+kotlinxSerialization = "1.8.0"
 errorProneAnnotations = "2.30.0"
 compileSdk = "35"
 minSdk = "26"
@@ -14,13 +15,10 @@ ksp = "2.1.10-1.0.31"
 lifecycleRuntime = "2.9.4"
 porcupine = "4.0.0"
 openWakeWordAndroid = "0.1.5"
-# Musí sedět se sherpa-onnx AAR (1.12.28 → ORT 1.17.1). 1.20.x → dlopen OrtGetApiBase u ECAPA.
-onnxRuntime = "1.17.1"
+onnxRuntime = "1.25.0"
 sherpaOnnx = "1.12.28"
-voskAndroid = "0.3.47"
 securityCrypto = "1.0.0"
 room = "2.6.1"
-mediapipeTasksGenai = "0.10.21"
 ktlint = "12.1.2"
 detekt = "1.23.8"
 
@@ -46,21 +44,21 @@ hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref
 hilt-android-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "kotlinxCoroutines" }
 kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
+kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
 porcupine-android = { group = "ai.picovoice", name = "porcupine-android", version.ref = "porcupine" }
 openwakeword-android = { group = "xyz.rementia", name = "openwakeword", version.ref = "openWakeWordAndroid" }
 onnxruntime-android = { group = "com.microsoft.onnxruntime", name = "onnxruntime-android", version.ref = "onnxRuntime" }
-mediapipe-tasks-genai = { group = "com.google.mediapipe", name = "tasks-genai", version.ref = "mediapipeTasksGenai" }
 androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" }
 kotlin-test-junit = { group = "org.jetbrains.kotlin", name = "kotlin-test-junit", version.ref = "kotlin" }
 google-error-prone-annotations = { group = "com.google.errorprone", name = "error_prone_annotations", version.ref = "errorProneAnnotations" }
 detekt-formatting = { group = "io.gitlab.arturbosch.detekt", name = "detekt-formatting", version.ref = "detekt" }
-vosk-android = { group = "com.alphacephei", name = "vosk-android", version.ref = "voskAndroid" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 kotlin-compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

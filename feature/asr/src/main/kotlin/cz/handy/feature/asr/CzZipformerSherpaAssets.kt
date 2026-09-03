@@ -42,10 +42,10 @@ object CzZipformerSherpaAssets {
                     joiner = "$PREFIX/joiner.onnx",
                 ),
             tokens = "$PREFIX/tokens.txt",
-            modelType = ZIPFORMER2,
+            modelType = MODEL_TYPE,
             numThreads = threads,
             provider = "cpu",
         )
 
-    private const val ZIPFORMER2 = "zipformer2"
+    private const val MODEL_TYPE = "zipformer"  // English 2023-02-21 encoder in assets; not zipformer2
 }

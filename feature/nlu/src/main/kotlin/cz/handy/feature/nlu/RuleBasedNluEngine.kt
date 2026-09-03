@@ -50,7 +50,7 @@ class RuleBasedNluEngine(
         val slots =
             m.orderedSlotNames
                 .zip(groups) { name, raw -> name to raw.trim() }
-                .toMap()
+                .toMap() + m.staticSlots
         return when {
             def.slotOk(slots) ->
                 ParsedIntent(
