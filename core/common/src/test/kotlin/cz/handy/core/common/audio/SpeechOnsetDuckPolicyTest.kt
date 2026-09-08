@@ -144,6 +144,41 @@ class SpeechOnsetDuckPolicyTest {
     }
 
     @Test
+    fun short_lyric_words_do_not_duck_even_when_confident() {
+        val p = SpeechOnsetDuckPolicy()
+        for (lyric in listOf("baby", "yeah", "love", "tonight", "mute")) {
+            val event =
+                p.onSpeechHeard(
+                    commandOnset(lyric, minTokenProb = 0.92f, nowMs = 5_000L),
+                )
+            assertEquals(SpeechOnsetDuckPolicy.Action.None, event.action, lyric)
+        }
+        assertFalse(p.isDucked)
+    }
+
+    @Test
+    fun pause_still_ducks_when_sherpa_omits_token_probs() {
+        val p = SpeechOnsetDuckPolicy()
+        val start =
+            p.onSpeechHeard(
+                commandOnset("pause", minTokenProb = null, nowMs = 6_000L),
+            )
+        assertEquals(SpeechOnsetDuckPolicy.Action.PauseNow, start.action)
+        assertTrue(p.isDucked)
+    }
+
+    @Test
+    fun lyric_line_without_token_probs_does_not_duck() {
+        val p = SpeechOnsetDuckPolicy()
+        val event =
+            p.onSpeechHeard(
+                musicOnset("AND A GOLD BRIMUS", minTokenProb = null, nowMs = 7_000L),
+            )
+        assertEquals(SpeechOnsetDuckPolicy.Action.None, event.action)
+        assertFalse(p.isDucked)
+    }
+
+    @Test
     fun short_or_low_confidence_onsets_are_ignored() {
         val p = SpeechOnsetDuckPolicy()
         val shortText =
@@ -180,7 +215,7 @@ class SpeechOnsetDuckPolicyTest {
 
     private fun musicOnset(
         text: String,
-        minTokenProb: Float,
+        minTokenProb: Float?,
         nowMs: Long,
     ) = SpeechOnsetDuckPolicy.OnsetSample(
         text = text,

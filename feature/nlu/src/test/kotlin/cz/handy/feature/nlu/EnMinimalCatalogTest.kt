@@ -41,6 +41,13 @@ class EnMinimalCatalogTest {
             (quiet as? NluResult.Matched)?.intent?.intentId,
             "quiet must not fuzzy-match media STOP",
         )
+        assertNotEquals(
+            "STOP",
+            (RuleBasedNluEngine(HandyNluCatalogs.mvp).blockingParse("be quiet") as? NluResult.Matched)
+                ?.intent
+                ?.intentId,
+            "mvp hush phrases must not pause media via STOP",
+        )
     }
 
     @Test

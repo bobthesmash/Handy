@@ -64,13 +64,7 @@ object HandyNluCatalogs {
                     "stop",
                     "zastav",
                     "přestaň mluvit",
-                    "ticho",
-                    "knock it off",
-                    "be quiet",
                     "stop talking",
-                    "shut up",
-                    "hush",
-                    "hold on",
                 )
             }
             intent("REPEAT", requiresConfirm = false) {

@@ -48,7 +48,7 @@ class SpeechOnsetDuckPolicy {
             remember(normalized, sample.nowMs)
             return Event(Action.None, generation)
         }
-        if (!shouldDuckNow(normalized, sample.nowMs)) {
+        if (!looksLikeImmediateCommand(normalized)) {
             remember(normalized, sample.nowMs)
             return Event(Action.None, generation)
         }
@@ -88,15 +88,6 @@ class SpeechOnsetDuckPolicy {
         return true
     }
 
-    private fun shouldDuckNow(
-        normalized: String,
-        nowMs: Long,
-    ): Boolean {
-        if (looksLikeImmediateCommand(normalized)) return true
-        val previous = recent.lastOrNull { isSameUtterance(it.normalized, normalized) } ?: return false
-        return nowMs - previous.atMs >= STABILITY_MS
-    }
-
     private fun isMusicChatter(
         normalized: String,
         nowMs: Long,
@@ -113,7 +104,18 @@ class SpeechOnsetDuckPolicy {
     private fun looksLikeImmediateCommand(normalized: String): Boolean {
         val words = normalized.split(' ').filter { it.isNotEmpty() }
         if (words.isEmpty() || words.size > MAX_IMMEDIATE_WORDS) return false
-        return words.maxOf { word -> word.count { it.isLetter() } } >= MIN_LONGEST_WORD_LETTERS
+        if (words.maxOf { word -> word.count { it.isLetter() } } < MIN_LONGEST_WORD_LETTERS) {
+            return false
+        }
+        return words.any { isCommandToken(it) }
+    }
+
+    private fun isCommandToken(word: String): Boolean {
+        if (word in COMMAND_TOKENS) return true
+        return COMMAND_TOKENS.any { token ->
+            token.length >= MIN_LONGEST_WORD_LETTERS &&
+                (word.startsWith(token) || (word.length >= MIN_LONGEST_WORD_LETTERS && token.startsWith(word)))
+        }
     }
 
     private fun remember(
@@ -155,11 +157,37 @@ class SpeechOnsetDuckPolicy {
         const val MIN_DUCK_TOKEN_PROB = 0.40f
         const val CHATTER_WINDOW_MS = 900L
         const val CHATTER_DISTINCT_LIMIT = 3
-        const val STABILITY_MS = 200L
         const val MAX_IMMEDIATE_WORDS = 2
         const val MIN_LONGEST_WORD_LETTERS = 4
         private const val MIN_PREFIX_CHARS = 3
         private val WHITESPACE = Regex("\\s+")
+        private val COMMAND_TOKENS =
+            setOf(
+                "pause",
+                "pauza",
+                "stop",
+                "zastav",
+                "play",
+                "resume",
+                "přehraj",
+                "battery",
+                "baterk",
+                "flashlight",
+                "torch",
+                "volume",
+                "hlasitost",
+                "navigate",
+                "naviguj",
+                "louder",
+                "quieter",
+                "next",
+                "skip",
+                "previous",
+                "light",
+                "timer",
+                "open",
+                "call",
+            )
 
         fun shouldKeepPaused(
             intentId: String,

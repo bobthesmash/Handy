@@ -235,8 +235,7 @@ class MediaPlaybackHandover(
         }
 
     companion object {
-        const val NLS_REQUIRED_TTS =
-            "Povolte Handy přístup k oznámením — bez něj nelze pauznout ani zastavit hudbu."
+        const val NLS_REQUIRED_TTS = MediaStopAcknowledge.NLS_REQUIRED_TTS
         const val NLS_REQUIRED_LOG =
             "media session access denied (MEDIA_CONTENT_CONTROL). Enable Handy in notification listener settings."
         private const val TAG = "HandyMediaSession"

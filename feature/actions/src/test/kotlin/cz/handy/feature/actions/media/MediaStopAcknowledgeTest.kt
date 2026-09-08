@@ -24,11 +24,7 @@ class MediaStopAcknowledgeTest {
     fun missing_notification_listener_stays_loud() {
         val out =
             MediaStopAcknowledge.of(
-                Result.failure(
-                    IllegalStateException(
-                        "Povolte Handy „přístup k oznámením“ — bez něj systém nesdílí aktivní mediální relace.",
-                    ),
-                ),
+                Result.failure(IllegalStateException(MediaStopAcknowledge.NLS_REQUIRED_TTS)),
             )
         assertTrue(out.isFailure)
         assertTrue(out.exceptionOrNull()!!.message!!.contains("přístup k oznámením"))

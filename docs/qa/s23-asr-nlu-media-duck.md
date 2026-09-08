@@ -30,7 +30,7 @@ Music lyrics/noise must **not** pause playback by themselves. Sherpa will still 
 Duck gating (`SpeechOnsetDuckPolicy`, logcat **`HandyMediaDuck`**):
 
 1. Only while **listening for a command** (not standby Mute, not while Handy TTS is speaking).
-2. Text long enough (min 4 chars) and, when Sherpa `ysProbs` exist, **min token prob ≥ 0.40**. Rapid lyric-like lines (3+ distinct hypotheses in ~900 ms, or long unstable phrases) do **not** duck.
+2. Text long enough (min 4 chars) and, when Sherpa `ysProbs` exist, **min token prob ≥ 0.40**. Rapid lyric-like lines do **not** duck. Short lyric words (`baby`, `yeah`, `love`, `tonight`) do **not** duck. Duck starts only when a **command token** appears (`pause`, `stop`, `play`, `battery`, `navigate`, …). Standby **Mute** is not a duck token.
 3. A real short command (`pause`, `stop`, `play`, `battery`, …) with high confidence **does** pause active media for 2000 ms so ASR can hear the rest.
 4. If the resolved intent is pause/STOP, duck **keeps paused** (window must not resume over a real pause/stop). Other intents resume.
 

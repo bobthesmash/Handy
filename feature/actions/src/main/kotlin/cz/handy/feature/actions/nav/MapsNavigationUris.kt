@@ -1,7 +1,6 @@
 package cz.handy.feature.actions.nav
 
 import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
 
 /**
  * Google Maps intents that start **turn-by-turn guidance**, not a pin / route preview.
@@ -51,5 +50,5 @@ object MapsNavigationUris {
         return false
     }
 
-    private fun encode(place: String): String = URLEncoder.encode(place, StandardCharsets.UTF_8).replace("+", "%20")
+    private fun encode(place: String): String = URLEncoder.encode(place, "UTF-8").replace("+", "%20")
 }

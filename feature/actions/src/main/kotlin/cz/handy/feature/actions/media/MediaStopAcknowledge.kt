@@ -6,6 +6,9 @@ package cz.handy.feature.actions.media
  */
 object MediaStopAcknowledge {
     const val STOPPED = "Stopped."
+    const val NLS_REQUIRED_TTS =
+        "Povolte Handy přístup k oznámením — bez něj nelze pauznout ani zastavit hudbu."
+    const val NO_SESSION_MARKER = "Žádná aktivní mediální relace"
 
     fun of(pause: Result<String>): Result<String> {
         if (pause.isSuccess) return Result.success(STOPPED)
@@ -16,6 +19,4 @@ object MediaStopAcknowledge {
         }
         return Result.failure(err)
     }
-
-    const val NO_SESSION_MARKER = "Žádná aktivní mediální relace"
 }
