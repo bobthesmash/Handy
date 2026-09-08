@@ -11,6 +11,8 @@ import cz.handy.feature.actions.audio.MediaVolumeAdjuster
 import cz.handy.feature.actions.info.DeviceInfoAnswers
 import cz.handy.feature.actions.media.MediaCtrlCommandParser
 import cz.handy.feature.actions.media.MediaPlaybackHandover
+import cz.handy.feature.actions.media.MediaStopAcknowledge
+import cz.handy.feature.actions.media.MediaTransportCommand
 import cz.handy.feature.actions.nav.MapsNavigateLauncher
 import cz.handy.feature.actions.notification.HandyNotificationListenerService
 import cz.handy.feature.actions.notification.NotificationSnapshotStore
@@ -64,6 +66,7 @@ class MvpIntentExecutor(
             "SET_CONTACT_ALIAS" -> execSetContactAlias(parsed)
             "REMOVE_CONTACT_ALIAS" -> execRemoveContactAlias(parsed)
             "UNLOCK_SCREEN" -> execUnlockScreen()
+            "STOP" -> MediaStopAcknowledge.of(mediaHandover.transport(MediaTransportCommand.Pause))
             "CONFIRM" -> Result.success("OK.")
             else ->
                 Result.failure(
