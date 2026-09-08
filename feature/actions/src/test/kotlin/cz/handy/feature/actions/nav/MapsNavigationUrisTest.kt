@@ -54,4 +54,16 @@ class MapsNavigationUrisTest {
         assertTrue(MapsNavigationUris.isPreviewOnly("https://www.google.com/maps/dir/?api=1&destination=Austin"))
         assertFalse(MapsNavigationUris.isTurnByTurn("geo:0,0?q=Austin"))
     }
+
+    @Test
+    fun czech_place_still_starts_google_navigation_guidance() {
+        val uri = MapsNavigationUris.googleNavigation("Karlův most")
+        assertTrue(uri.startsWith("google.navigation:q="))
+        assertTrue(uri.endsWith("&mode=d"))
+        assertTrue(MapsNavigationUris.isTurnByTurn(uri))
+        assertFalse(MapsNavigationUris.isPreviewOnly(uri))
+        val plan = MapsNavigationUris.planFor("Karlův most")
+        assertEquals(uri, plan.primaryUri)
+        assertTrue(plan.fallbackUri.contains("dir_action=navigate"))
+    }
 }

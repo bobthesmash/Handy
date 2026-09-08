@@ -1,12 +1,12 @@
 package cz.handy.feature.asr
 
 import cz.handy.core.audio.MicCaptureConfig
+import cz.handy.core.common.asr.PlaceAsrLanguage
 import org.vosk.Model
 import org.vosk.Recognizer
 import java.io.IOException
 
-fun createVoskCzStreamingRecognizer(model: Model): VoskCzStreamingSpeechRecognizer =
-    VoskCzStreamingSpeechRecognizer(model)
+fun createVoskCzStreamingRecognizer(model: Model): VoskCzStreamingSpeechRecognizer = VoskCzStreamingSpeechRecognizer(model)
 
 /**
  * Streamování přes Vosk API (český small model). [minTokenProb] v ticku je vždy `null` — Vosk neposkytuje
@@ -15,6 +15,8 @@ fun createVoskCzStreamingRecognizer(model: Model): VoskCzStreamingSpeechRecogniz
 class VoskCzStreamingSpeechRecognizer(
     private val model: Model,
 ) : StreamingAsrRecognizer {
+    override val engineLanguage: PlaceAsrLanguage = PlaceAsrLanguage.CZECH
+
     private var recognizer: Recognizer? = null
 
     override fun startUtterance() {
@@ -71,6 +73,7 @@ private fun ShortArray.asVoskPcmBytes(): ByteArray {
 
 internal fun parseVoskJsonText(json: String): String {
     if (json.isBlank()) return ""
+
     fun field(name: String): String? =
         Regex(""""$name"\s*:\s*"([^"]*)"""")
             .find(json)

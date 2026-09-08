@@ -1,9 +1,13 @@
 package cz.handy.feature.asr
 
+import cz.handy.core.common.asr.PlaceAsrLanguage
+
 /**
  * Společný kontrakt pro streamování 16-bit mono 16 kHz (Sherpa zipformer2 nebo Vosk CZ).
  */
 interface StreamingAsrRecognizer : AutoCloseable {
+    val engineLanguage: PlaceAsrLanguage
+
     fun startUtterance()
 
     fun appendPcm16Mono(pcm: ShortArray): StreamingSherpaTick
