@@ -85,7 +85,7 @@ class NluEngineEdgeCasesTest {
         assertEquals(false, needsConfirm("naviguj na brno"))
         assertEquals(false, needsConfirm("časovač pět minut"))
         assertEquals(false, needsConfirm("zruš"))
-        assertEquals(false, needsConfirm("ticho"))
+        assertEquals(false, needsConfirm("stop"))
         assertEquals(false, needsConfirm("zopakuj"))
         assertEquals(false, needsConfirm("nazývej Jan Novák jako bratr"))
         assertEquals(false, needsConfirm("smaž alias bratr"))

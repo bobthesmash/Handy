@@ -64,13 +64,7 @@ object HandyNluCatalogs {
                     "stop",
                     "zastav",
                     "přestaň mluvit",
-                    "ticho",
-                    "knock it off",
-                    "be quiet",
                     "stop talking",
-                    "shut up",
-                    "hush",
-                    "hold on",
                 )
             }
             intent("REPEAT", requiresConfirm = false) {
@@ -335,8 +329,12 @@ object HandyNluCatalogs {
         }
 
     /**
-     * Anglické vzory pro základní příkazy — používá se jen při zapnutém overlay v nastavení ([F5-T03]).
-     * ASR zůstává primárně CZ model; overlay pomůže při smíšených frázích nebo budoucím EN ASR.
+     * English demo catalog used from the assistant ViewModel.
+     * Keep play / pause / torch / battery / volume phrases here — a thin catalog
+     * silently breaks those commands on device.
+     *
+     * Standby spoken word is exactly "Mute" (handled before NLU). Do not list mute /
+     * quiet / silence as STOP or media-pause phrases.
      */
     val enMinimal: IntentCatalog =
         intentCatalog {
@@ -347,7 +345,10 @@ object HandyNluCatalogs {
                 phrase("{mode} flashlight")
                 patterns(
                     "flashlight{mode=on}",
+                    "flashlight on{mode=on}",
+                    "light on{mode=on}",
                     "light off{mode=off}",
+                    "flashlight off{mode=off}",
                 )
             }
             intent("WHAT_TIME", requiresConfirm = false) {
@@ -370,14 +371,37 @@ object HandyNluCatalogs {
                     "what is my battery",
                 )
             }
+            intent("VOLUME", requiresConfirm = false) {
+                patterns(
+                    "volume up{operation=up}",
+                    "volume down{operation=down}",
+                    "louder{operation=up}",
+                    "quieter{operation=down}",
+                )
+            }
             intent("CANCEL", requiresConfirm = false) {
                 patterns("cancel", "abort")
             }
             intent("STOP", requiresConfirm = false) {
-                patterns("stop", "quiet", "silence")
+                patterns("stop")
             }
             intent("REPEAT", requiresConfirm = false) {
                 patterns("repeat", "say that again")
+            }
+            intent("PLAY_MEDIA", requiresConfirm = false) {
+                patterns(
+                    "play",
+                    "play music",
+                    "play media",
+                    "resume",
+                )
+            }
+            intent("MEDIA_CTRL", requiresConfirm = false) {
+                patterns(
+                    "pause{command=pause}",
+                    "next{command=next}",
+                    "previous{command=previous}",
+                )
             }
             intent("OPEN_APP", requiresConfirm = false) {
                 patterns("open {app}", "launch {app}", "start {app}")

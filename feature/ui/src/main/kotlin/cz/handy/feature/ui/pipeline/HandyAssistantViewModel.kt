@@ -130,11 +130,12 @@ class HandyAssistantViewModel(
 
     private fun buildRulesParser(): UtteranceNluParser {
         val cs = RuleBasedNluEngine(HandyNluCatalogs.mvp)
+        val en = RuleBasedNluEngine(HandyNluCatalogs.enMinimal)
         val app = getApplication<Application>()
         return if (AssistEnglishNluPreferences(app).isEnabled()) {
-            ChainedUtteranceParsers(cs, RuleBasedNluEngine(HandyNluCatalogs.enMinimal))
+            ChainedUtteranceParsers(en, cs)
         } else {
-            cs
+            ChainedUtteranceParsers(cs, en)
         }
     }
 
@@ -371,7 +372,11 @@ class HandyAssistantViewModel(
                         val tick = r.appendPcm16Mono(chunk)
                         if (tick.text.isNotBlank()) {
                             PipelineLatencyTracer.markFirstAsrPartial(true)
-                            mediaDucker.onSpeechOnset()
+                            mediaDucker.onSpeechOnset(
+                                text = tick.text,
+                                minTokenProb = tick.minTokenProb,
+                                listeningForCommand = !isStandby.get() && !ignoreMicForTts.get(),
+                            )
                         }
                         if (tick.endpoint) {
                             val heard = tick.text.trim()
@@ -560,7 +565,6 @@ class HandyAssistantViewModel(
                     )
                     when (out.intent.intentId) {
                         "CANCEL" -> finishMetaAssistantLine("Action cancelled.")
-                        "STOP" -> finishMetaAssistantLine("Stopped.")
                         "REPEAT" -> finishMetaAssistantLine(repeatLineOrFallback())
                         "CALL" -> {
                             val rawContact = out.intent.slots["contact"].orEmpty()

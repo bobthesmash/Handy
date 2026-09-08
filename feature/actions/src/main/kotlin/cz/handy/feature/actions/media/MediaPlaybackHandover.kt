@@ -7,6 +7,7 @@ import android.content.Intent
 import android.media.session.MediaController
 import android.media.session.MediaSessionManager
 import android.media.session.PlaybackState
+import android.util.Log
 import cz.handy.feature.actions.notification.HandyNotificationListenerService
 
 /**
@@ -24,7 +25,7 @@ class MediaPlaybackHandover(
             activeControllers()
                 ?: return Result.failure(mediaControlUnavailable())
         if (ctrls.isEmpty()) {
-            return Result.failure(IllegalStateException("Žádná aktivní mediální relace."))
+            return Result.failure(IllegalStateException("${MediaStopAcknowledge.NO_SESSION_MARKER}."))
         }
         val target = pickPreferredController(ctrls)
         val tc = target.transportControls
@@ -82,7 +83,7 @@ class MediaPlaybackHandover(
             activeControllers()
                 ?: return Result.failure(mediaControlUnavailable())
         if (ctrls.isEmpty()) {
-            return Result.failure(IllegalStateException("Žádná aktivní mediální relace."))
+            return Result.failure(IllegalStateException("${MediaStopAcknowledge.NO_SESSION_MARKER}."))
         }
         var anyPlaying = false
         for (c in ctrls) {
@@ -178,24 +179,33 @@ class MediaPlaybackHandover(
         }
     }
 
-    private fun mediaControlUnavailable(): IllegalStateException =
-        IllegalStateException(
-            "Povolte Handy „přístup k oznámením“ — bez něj systém nesdílí aktivní mediální relace.",
-        )
+    private fun mediaControlUnavailable(): IllegalStateException {
+        Log.e(TAG, NLS_REQUIRED_LOG)
+        return IllegalStateException(NLS_REQUIRED_TTS)
+    }
 
     fun isPlaybackActive(): Boolean {
         val ctrls = activeControllers() ?: return false
         return ctrls.any { controllerIsPlaying(it) }
     }
 
-    fun pauseActivePlayback(): Boolean {
-        val ctrls = activeControllers() ?: return false
-        if (ctrls.isEmpty()) return false
+    fun pauseActivePlayback(): DuckPauseResult {
+        val ctrls = activeControllers()
+        if (ctrls == null) {
+            Log.e(TAG, NLS_REQUIRED_LOG)
+            return DuckPauseResult.NoAccess
+        }
+        if (ctrls.isEmpty()) {
+            Log.w(TAG, "pauseActivePlayback: no active media session")
+            return DuckPauseResult.NoSession
+        }
         val target = pickPreferredController(ctrls)
-        if (!controllerIsPlaying(target)) return false
+        if (!controllerIsPlaying(target)) {
+            return DuckPauseResult.NotPlaying
+        }
         target.transportControls.pause()
         duckedPackage = target.packageName
-        return true
+        return DuckPauseResult.Paused
     }
 
     fun resumePreferredPlayback() {
@@ -223,4 +233,11 @@ class MediaPlaybackHandover(
             -> true
             else -> false
         }
+
+    companion object {
+        const val NLS_REQUIRED_TTS = MediaStopAcknowledge.NLS_REQUIRED_TTS
+        const val NLS_REQUIRED_LOG =
+            "media session access denied (MEDIA_CONTENT_CONTROL). Enable Handy in notification listener settings."
+        private const val TAG = "HandyMediaSession"
+    }
 }

@@ -25,6 +25,8 @@ object MediaCtrlCommandParser {
                 c.contains("stop") ||
                 c.contains("zastav") -> MediaTransportCommand.Pause
 
+            c.contains("mute") -> null
+
             c.contains("pokračuj") ||
                 c.contains("resume") ||
                 c == "play" -> MediaTransportCommand.Play

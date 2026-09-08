@@ -20,6 +20,7 @@ class MediaCtrlCommandParserTest {
         assertEquals(MediaTransportCommand.Pause, MediaCtrlCommandParser.parse("stop hudbu"))
         assertEquals(MediaTransportCommand.Play, MediaCtrlCommandParser.parse("pokračuj"))
         assertEquals(MediaTransportCommand.Play, MediaCtrlCommandParser.parse("resume"))
+        assertNull(MediaCtrlCommandParser.parse("mute"), "standby Mute must not be media pause")
     }
 
     @Test

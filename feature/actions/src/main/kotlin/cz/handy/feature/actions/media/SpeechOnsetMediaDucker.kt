@@ -1,5 +1,6 @@
 package cz.handy.feature.actions.media
 
+import android.os.SystemClock
 import android.util.Log
 import cz.handy.core.common.audio.SpeechOnsetDuckPolicy
 import kotlinx.coroutines.CoroutineScope
@@ -8,18 +9,33 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * Pauses active media when speech is heard so Sherpa ASR is not competing with playback.
- * Tag: `HandyMediaDuck`.
+ * Pauses active media when a *real* command onset is heard so Sherpa ASR is not competing
+ * with playback. Music-like ASR chatter must not trigger this. Tag: `HandyMediaDuck`.
  */
 class SpeechOnsetMediaDucker(
     private val handover: MediaPlaybackHandover,
     private val scope: CoroutineScope,
     private val policy: SpeechOnsetDuckPolicy = SpeechOnsetDuckPolicy(),
+    private val nowMs: () -> Long = { SystemClock.elapsedRealtime() },
 ) {
     private var windowJob: Job? = null
 
-    fun onSpeechOnset() {
-        apply(policy.onSpeechHeard(handover.isPlaybackActive()))
+    fun onSpeechOnset(
+        text: String,
+        minTokenProb: Float?,
+        listeningForCommand: Boolean,
+    ) {
+        apply(
+            policy.onSpeechHeard(
+                SpeechOnsetDuckPolicy.OnsetSample(
+                    text = text,
+                    minTokenProb = minTokenProb,
+                    playbackActive = handover.isPlaybackActive(),
+                    listeningForCommand = listeningForCommand,
+                    nowMs = nowMs(),
+                ),
+            ),
+        )
     }
 
     fun onCommandFinished(keepPlaybackPaused: Boolean) {
@@ -30,11 +46,22 @@ class SpeechOnsetMediaDucker(
         when (event.action) {
             SpeechOnsetDuckPolicy.Action.None -> Unit
             SpeechOnsetDuckPolicy.Action.PauseNow -> {
-                handover.pauseActivePlayback()
-                Log.i(
-                    TAG,
-                    "paused playback for ${SpeechOnsetDuckPolicy.WINDOW_MS}ms speech window gen=${event.generation}",
-                )
+                when (handover.pauseActivePlayback()) {
+                    DuckPauseResult.Paused ->
+                        Log.i(
+                            TAG,
+                            "paused playback for ${SpeechOnsetDuckPolicy.WINDOW_MS}ms speech window gen=${event.generation}",
+                        )
+                    DuckPauseResult.NotPlaying ->
+                        Log.i(TAG, "speech-onset duck skipped — nothing playing gen=${event.generation}")
+                    DuckPauseResult.NoAccess ->
+                        Log.e(
+                            TAG,
+                            "speech-onset duck cannot pause: notification listener / MEDIA_CONTENT_CONTROL missing gen=${event.generation}",
+                        )
+                    DuckPauseResult.NoSession ->
+                        Log.w(TAG, "speech-onset duck found no media session gen=${event.generation}")
+                }
                 windowJob?.cancel()
                 val gen = event.generation
                 windowJob =

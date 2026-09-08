@@ -183,6 +183,7 @@ Soubory `docs/benchmarks/latency.md`, `docs/benchmarks/battery.md`, `docs/qa/loc
 > Agent workery sem přidávají řádky podle pořadí dokončení. Formát: `YYYY-MM-DD  [ID]  Krátký popis  (worker: <jméno/handle>)`.
 
 ```
+2026-09-08  [media/nav]  Gate speech-onset media duck against music ASR hallucinations; pause/stop keep paused + loud NLS failure; Maps `google.navigation` turn-by-turn via lockscreen trampoline (v0.2.5 / 207).  (worker: cursor-agent)
 2026-05-17  [F5-T01–F5-T07]  Fáze 5: MediaPipe LLM JSON NLU (`:feature:nlu-llm`), EN overlay pravidla, Piper ADR+assets README, Wear skeleton APK, zpřístupněnost z nastavení, F-Droid šablona metadata + docs; anti-spoof ONNX zůstává dle ADR-0007.  (worker: Cursor agent)
 2026-05-17  [D-002–D-007]  ADR `docs/decisions/0009-product-direction-defaults.md` — výchozí směr v1 (CZ, Porcupine, sideload→Play, Google CZ TTS, anti-spoof F5, beta účast od F4).  (worker: Cursor agent)
 2026-05-17  [D-001]  Referenční HW pro měření F0/F3 a QA matrix: Samsung Galaxy S20; odkázáno v README + benchmark šablonách + `progress.html`.  (worker: Cursor agent)
