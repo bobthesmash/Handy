@@ -6,8 +6,8 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotEquals
 
 /**
- * Live S23 Sherpa EN mishears: command phrases get ~20% spelling tolerance;
- * contact/place slot values stay exact.
+ * Live S23 Sherpa EN mishears: command phrases use FuzzyWuzzy ratio /
+ * token_sort_ratio (min_confidence 80); contact/place slot values stay exact.
  */
 class AsrSpellingNluEngineTest {
     private val engine = RuleBasedNluEngine(HandyNluCatalogs.mvp)

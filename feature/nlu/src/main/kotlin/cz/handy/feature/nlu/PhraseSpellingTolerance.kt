@@ -1,66 +1,46 @@
 package cz.handy.feature.nlu
 
 import java.util.Locale
-import kotlin.math.ceil
 import kotlin.math.max
-import kotlin.math.min
 
 /**
- * Single spelling-tolerance rule for catalog **command** phrases (~20% Levenshtein).
- * Space is ignored as a secondary comparison so ASR splits like `flesh light` still
- * match `flashlight`. Contact/place **names** are not rewritten by this tool —
- * callers must pass only command literals, never slot values.
+ * Rhasspy / FuzzyWuzzy command-phrase matcher.
+ *
+ * Scores with [FuzzyWuzzy.ratio] and [FuzzyWuzzy.tokenSortRatio] at
+ * [MIN_CONFIDENCE] = 80 (~20% spelling). Compound ASR splits (`flesh light` /
+ * `flashlight`) are scored again with spaces removed using the same ratio.
+ *
+ * Contact/place **names** are never passed through this tool.
  */
 object PhraseSpellingTolerance {
-    const val RELATIVE_TOLERANCE = 0.20
-    const val MIN_LENGTH_FOR_EDITS = 4
+    const val MIN_CONFIDENCE = 80
+    const val MIN_LENGTH_FOR_FUZZY = 4
 
     fun within(
         left: String,
         right: String,
-    ): Boolean {
+    ): Boolean = score(left, right) >= MIN_CONFIDENCE
+
+    fun score(
+        left: String,
+        right: String,
+    ): Int {
         val a = left.trim()
         val b = right.trim()
-        if (a == b) return true
-        if (a.isEmpty() || b.isEmpty()) return false
-        if (editsWithinTolerance(a, b)) return true
+        if (a == b) return 100
+        if (a.isEmpty() || b.isEmpty()) return 0
+        if (max(a.length, b.length) < MIN_LENGTH_FOR_FUZZY) {
+            return 0
+        }
+        val spaced =
+            max(
+                FuzzyWuzzy.ratio(a, b),
+                FuzzyWuzzy.tokenSortRatio(a, b),
+            )
         val compactA = a.replace(" ", "")
         val compactB = b.replace(" ", "")
-        if (compactA == compactB) return true
-        return editsWithinTolerance(compactA, compactB)
-    }
-
-    internal fun editsWithinTolerance(
-        a: String,
-        b: String,
-    ): Boolean {
-        val n = max(a.length, b.length)
-        if (n < MIN_LENGTH_FOR_EDITS) return a == b
-        val dist = levenshtein(a, b)
-        val allowed = max(1, ceil(RELATIVE_TOLERANCE * n).toInt())
-        return dist <= allowed
-    }
-
-    internal fun levenshtein(
-        s1: String,
-        s2: String,
-    ): Int {
-        val dp = IntArray(s2.length + 1) { it }
-        for (i in 1..s1.length) {
-            var prev = dp[0]
-            dp[0] = i
-            for (j in 1..s2.length) {
-                val temp = dp[j]
-                dp[j] =
-                    if (s1[i - 1] == s2[j - 1]) {
-                        prev
-                    } else {
-                        min(prev, min(dp[j], dp[j - 1])) + 1
-                    }
-                prev = temp
-            }
-        }
-        return dp[s2.length]
+        if (compactA == a && compactB == b) return spaced
+        return max(spaced, FuzzyWuzzy.ratio(compactA, compactB))
     }
 }
 

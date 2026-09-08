@@ -4,7 +4,9 @@ Device QA for the EN demo pipeline (`cz.handy.app`). Typed console must keep wor
 
 ## A — Fuzzy command phrases (~20% spelling)
 
-Sherpa often emits near-misses (`BUTTER`, `BATTERET`, `FLESH LIGHT`, `LIGHT OF`, `OH LIGHT OFF`). Rule NLU now allows about **20% Levenshtein** on **command** catalog phrases (and compact forms so `flesh light` ≈ `flashlight`). Leading `OH`/`HEY` is stripped. **Contact and place names stay exact** (a wrong name must not be “corrected”).
+Sherpa often emits near-misses (`BUTTER`, `BATTERET`, `FLESH LIGHT`, `LIGHT OF`, `OH LIGHT OFF`). Rule NLU uses **FuzzyWuzzy / Rhasspy `fuzz.ratio` + `token_sort_ratio`** with **min_confidence 80** (~20% spelling). Compound ASR splits (`flesh light`) are scored with spaces removed using the same ratio. WRatio/partial/tokenSet are not used (they would map `battery status` onto `battery`). Leading `OH`/`HEY` is stripped. **Contact and place names stay exact** (a wrong name must not be “corrected”).
+
+Maven FuzzyKot (`com.github.terrakok:fuzzykot`) is Kotlin 2.3 metadata and does not load on Handy’s Kotlin 2.1 toolchain; the scorer is a tiny local copy of the same ratio/tokenSortRatio formulas.
 
 | Say / type | Expect |
 |------------|--------|
