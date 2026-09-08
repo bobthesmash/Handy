@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import cz.handy.core.audio.EarAudioBridge
+import cz.handy.core.common.audio.AsrGateFileMonitor
 import cz.handy.core.common.audio.AsrHypothesisConfidence
 import cz.handy.core.common.dialog.DialogManager
 import cz.handy.core.common.dialog.DialogPhase
@@ -48,6 +49,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -78,6 +80,11 @@ class HandyAssistantViewModel(
     private val sherpaHolder = SherpaStreamingRecognizerHolder(application)
     private val telemetry =
         HandyLocalTelemetry(application, LocalTelemetryPreferences(application))
+    private val asrGateMonitor =
+        AsrGateFileMonitor(
+            primaryFile = application.getExternalFilesDir(null)?.let { File(it, AsrGateFileMonitor.FILE_NAME) },
+            fallbackFile = File(application.filesDir, AsrGateFileMonitor.FILE_NAME),
+        )
 
     /** Po [HEAVY_MODEL_IDLE_MINUTES] bez interakce uvolníme ONNX ECAPA session a Sherpa graf ([F3-T05]). */
     private var heavyModelsIdleJob: Job? = null
@@ -374,6 +381,10 @@ class HandyAssistantViewModel(
                                         null
                                     }
                                 capturePhraseTurnPcm = false
+                                Log.i(
+                                    ASR_GATE_TAG,
+                                    "FINAL ASR: '$heard' (minTokenProb=${tick.minTokenProb})",
+                                )
                                 withContext(Dispatchers.Main.immediate) {
                                     submitRecognizedPhrase(
                                         heard,
@@ -426,9 +437,30 @@ class HandyAssistantViewModel(
         if (looksLikeOwnTts(trimmed)) {
             return
         }
-        if (AsrHypothesisConfidence.shouldAskRepeat(trimmed, minTokenProb)) {
+        val asrGate = asrGateMonitor.snapshot()
+        if (!asrGate.fromCache) {
+            Log.i(
+                ASR_GATE_TAG,
+                "ASR gate config source=${asrGate.sourcePath ?: "<defaults>"} " +
+                    "enabled=${asrGate.policy.enabled} mode=${asrGate.policy.mode.wireName} " +
+                    "minProb=${asrGate.policy.minProb}",
+            )
+        }
+        Log.i(
+            ASR_GATE_TAG,
+            "handleSimulatedTranscript: '$trimmed' minTokenProb=$minTokenProb",
+        )
+        if (AsrHypothesisConfidence.shouldAskRepeat(trimmed, minTokenProb, asrGate.policy)) {
             telemetry.recordLowConfidenceAsrRetry()
+            val converted =
+                minTokenProb?.let { AsrHypothesisConfidence.asProbability(it, asrGate.policy.mode) }
+            Log.i(
+                ASR_GATE_TAG,
+                "drop: low ASR confidence '$trimmed' minProb=$minTokenProb converted=$converted " +
+                    "threshold=${asrGate.policy.minProb} mode=${asrGate.policy.mode.wireName}",
+            )
             // Do not TTS "opakuj" — always-on mic hears it as REPEAT forever.
+            return
         }
         pendingTurnStartElapsed = SystemClock.elapsedRealtime()
 
@@ -788,6 +820,7 @@ class HandyAssistantViewModel(
 
     private companion object {
         private const val HEAVY_MODEL_TAG = "HandyHeavyModels"
+        private const val ASR_GATE_TAG = "HandyAsrGate"
         private const val HEAVY_MODEL_IDLE_MINUTES = 5L
         private const val MIC_FEED_POLL_MS = 25L
     }
