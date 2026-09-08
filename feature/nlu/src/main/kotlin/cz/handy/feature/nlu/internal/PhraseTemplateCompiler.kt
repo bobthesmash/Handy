@@ -1,5 +1,6 @@
 package cz.handy.feature.nlu.internal
 
+import cz.handy.feature.nlu.AsrUtteranceNormalizer
 import java.util.Locale
 import java.util.regex.Pattern
 
@@ -11,18 +12,24 @@ private val CS = Locale.forLanguageTag("cs-CZ")
  */
 internal object PhraseTemplateCompiler {
     private val bracePlaceholder = Regex("""\{([^}]+)\}""")
+    private val staticBrace = Regex("""\{[^}]*=[^}]*\}""")
+    private val captureBrace = Regex("""\{([^}=]+)\}""")
 
     fun compile(phraseTemplate: String): PhraseMatcherSpec {
-        val normalized = phraseTemplate.trim().lowercase(CS).replace(Regex("\\s+"), " ")
+        val normalized = AsrUtteranceNormalizer.normalizeTemplate(phraseTemplate)
         require(normalized.isNotBlank()) { "Šablona fráze nesmí být prázdná." }
 
         val occurrences = bracePlaceholder.findAll(normalized).toList()
+        val literalPhrase = spokenLiteral(normalized)
+        val leadingLiteral = leadingLiteralOf(normalized)
         if (occurrences.isEmpty()) {
             val pat = "^" + Pattern.quote(normalized) + "$"
             return PhraseMatcherSpec(
                 regex = Regex(pat, RegexOption.IGNORE_CASE),
                 orderedSlotNames = emptyList(),
                 staticSlots = emptyMap(),
+                literalPhrase = literalPhrase,
+                leadingLiteral = leadingLiteral,
             )
         }
 
@@ -66,6 +73,15 @@ internal object PhraseTemplateCompiler {
             regex = Regex(regexPat, RegexOption.IGNORE_CASE),
             orderedSlotNames = orderedSlotNames,
             staticSlots = staticSlots,
+            literalPhrase = literalPhrase,
+            leadingLiteral = leadingLiteral,
         )
+    }
+
+    private fun spokenLiteral(normalized: String): String = staticBrace.replace(normalized, " ").replace(Regex("\\s+"), " ").trim()
+
+    private fun leadingLiteralOf(normalized: String): String {
+        val firstCapture = captureBrace.find(normalized) ?: return spokenLiteral(normalized)
+        return normalized.substring(0, firstCapture.range.first).trim()
     }
 }

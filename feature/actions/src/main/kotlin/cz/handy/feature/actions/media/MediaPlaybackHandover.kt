@@ -10,16 +10,6 @@ import android.media.session.PlaybackState
 import cz.handy.feature.actions.notification.HandyNotificationListenerService
 
 /**
- * Transportní akce nad aktivní relací ([F2-T04]).
- */
-enum class MediaTransportCommand {
-    Next,
-    Previous,
-    Pause,
-    Play,
-}
-
-/**
  * Spouští přehrávání přes aktivní [MediaController] relace (vyžaduje povolený NLS Handy)
  * nebo předá řízení aplikaci Spotify / YouTube Music přes launcher intent ([F2-T03]).
  */
@@ -27,6 +17,7 @@ class MediaPlaybackHandover(
     context: Context,
 ) {
     private val app = context.applicationContext
+    private var duckedPackage: String? = null
 
     fun transport(cmd: MediaTransportCommand): Result<String> {
         val ctrls =
@@ -191,4 +182,45 @@ class MediaPlaybackHandover(
         IllegalStateException(
             "Povolte Handy „přístup k oznámením“ — bez něj systém nesdílí aktivní mediální relace.",
         )
+
+    fun isPlaybackActive(): Boolean {
+        val ctrls = activeControllers() ?: return false
+        return ctrls.any { controllerIsPlaying(it) }
+    }
+
+    fun pauseActivePlayback(): Boolean {
+        val ctrls = activeControllers() ?: return false
+        if (ctrls.isEmpty()) return false
+        val target = pickPreferredController(ctrls)
+        if (!controllerIsPlaying(target)) return false
+        target.transportControls.pause()
+        duckedPackage = target.packageName
+        return true
+    }
+
+    fun resumePreferredPlayback() {
+        val pkg = duckedPackage
+        duckedPackage = null
+        val ctrls = activeControllers() ?: return
+        if (ctrls.isEmpty()) return
+        val target = ctrls.find { it.packageName == pkg } ?: pickPreferredController(ctrls)
+        when (target.playbackState?.state) {
+            PlaybackState.STATE_PLAYING,
+            PlaybackState.STATE_BUFFERING,
+            -> return
+            else -> target.transportControls.play()
+        }
+    }
+
+    fun clearSpeechDuck() {
+        duckedPackage = null
+    }
+
+    private fun controllerIsPlaying(controller: MediaController): Boolean =
+        when (controller.playbackState?.state) {
+            PlaybackState.STATE_PLAYING,
+            PlaybackState.STATE_BUFFERING,
+            -> true
+            else -> false
+        }
 }

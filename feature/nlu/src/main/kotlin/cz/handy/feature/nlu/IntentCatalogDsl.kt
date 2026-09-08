@@ -36,9 +36,7 @@ class IntentCatalog internal constructor(
     }
 
     companion object {
-        private val CS = Locale.forLanguageTag("cs-CZ")
-
-        internal fun normalizeUtterance(utterance: String): String = utterance.trim().lowercase(CS).replace(Regex("\\s+"), " ")
+        internal fun normalizeUtterance(utterance: String): String = AsrUtteranceNormalizer.normalize(utterance)
     }
 }
 

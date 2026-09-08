@@ -12,19 +12,23 @@ class RuleBasedNluEngine(
     override suspend fun parse(utterance: String): NluResult {
         val n = IntentCatalog.normalizeUtterance(utterance)
         if (n.isBlank()) return NluResult.NoMatch
-        return matchCatalog(catalog.intents, n)
+        matchCatalog(catalog.intents, n)?.let { return NluResult.Matched(it) }
+        CatalogPhraseFuzzyMatcher.matchFirst(catalog.intents, n)?.let {
+            return NluResult.Matched(it)
+        }
+        return NluResult.NoMatch
     }
 
     private fun matchCatalog(
         defs: List<IntentDefinition>,
         normalized: String,
-    ): NluResult {
+    ): ParsedIntent? {
         for (def in defs) {
             matchFirstInDefinition(def, normalized)?.let {
-                return NluResult.Matched(it)
+                return it
             }
         }
-        return NluResult.NoMatch
+        return null
     }
 
     private fun matchFirstInDefinition(

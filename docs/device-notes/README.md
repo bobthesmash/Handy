@@ -7,3 +7,4 @@ Rozšířené poznámky k **konkrétním referenčním telefonům** (OEM chován
 | Soubor | Kontext |
 |--------|---------|
 | [galaxy-s20.md](galaxy-s20.md) | Samsung Galaxy S20 řada — rozhodnutí `[D-001]` v `IMPLEMENTATION_PLAN.md` |
+| [../qa/s23-asr-nlu-media-duck.md](../qa/s23-asr-nlu-media-duck.md) | Galaxy S23 live check: ASR spelling tolerance + speech-onset media duck |

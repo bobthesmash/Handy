@@ -9,12 +9,15 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import cz.handy.core.audio.EarAudioBridge
 import cz.handy.core.common.audio.AsrHypothesisConfidence
+import cz.handy.core.common.audio.SpeechOnsetDuckPolicy
 import cz.handy.core.common.dialog.DialogManager
 import cz.handy.core.common.dialog.DialogPhase
 import cz.handy.core.persistence.HandyLocalTelemetry
 import cz.handy.core.persistence.LocalTelemetryPreferences
 import cz.handy.core.persistence.PipelineLatencyTracer
 import cz.handy.feature.actions.executor.MvpIntentExecutor
+import cz.handy.feature.actions.media.MediaPlaybackHandover
+import cz.handy.feature.actions.media.SpeechOnsetMediaDucker
 import cz.handy.feature.actions.phone.DeviceContactFuzzyResolver
 import cz.handy.feature.asr.SherpaStreamingRecognizerHolder
 import cz.handy.feature.nlu.ChainedUtteranceParsers
@@ -73,6 +76,11 @@ class HandyAssistantViewModel(
         }.getOrElse { NoMatchUtteranceParser }
     }
     private val executor = MvpIntentExecutor(application)
+    private val mediaDucker =
+        SpeechOnsetMediaDucker(
+            MediaPlaybackHandover(application),
+            viewModelScope,
+        )
     private val speech: SpeechSynthesizer = AndroidCzechSpeechSynthesizer(application)
     private val destructiveVoiceConfirm by lazy { DestructiveConfirmVoiceVerifier(application) }
     private val sherpaHolder = SherpaStreamingRecognizerHolder(application)
@@ -363,6 +371,7 @@ class HandyAssistantViewModel(
                         val tick = r.appendPcm16Mono(chunk)
                         if (tick.text.isNotBlank()) {
                             PipelineLatencyTracer.markFirstAsrPartial(true)
+                            mediaDucker.onSpeechOnset()
                         }
                         if (tick.endpoint) {
                             val heard = tick.text.trim()
@@ -536,12 +545,19 @@ class HandyAssistantViewModel(
 
             when (val out = parseWithNlu(trimmed)) {
                 NluResult.NoMatch -> {
+                    mediaDucker.onCommandFinished(keepPlaybackPaused = false)
                     dialog.abortToIdle()
                     pendingTurnStartElapsed = null
                     _toastLine.value = "NLU: nerozumím."
                 }
 
                 is NluResult.Matched -> {
+                    mediaDucker.onCommandFinished(
+                        SpeechOnsetDuckPolicy.shouldKeepPaused(
+                            out.intent.intentId,
+                            out.intent.slots,
+                        ),
+                    )
                     when (out.intent.intentId) {
                         "CANCEL" -> finishMetaAssistantLine("Action cancelled.")
                         "STOP" -> finishMetaAssistantLine("Stopped.")
@@ -600,6 +616,7 @@ class HandyAssistantViewModel(
                 }
             }
         }.onFailure { err ->
+            mediaDucker.onCommandFinished(keepPlaybackPaused = false)
             speech.stop()
             dialog.abortToIdle()
             pendingTurnStartElapsed = null

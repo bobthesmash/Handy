@@ -21,6 +21,7 @@ object MediaCtrlCommandParser {
                 c == "next" -> MediaTransportCommand.Next
 
             c.contains("pauza") ||
+                c.contains("pause") ||
                 c.contains("stop") ||
                 c.contains("zastav") -> MediaTransportCommand.Pause
 

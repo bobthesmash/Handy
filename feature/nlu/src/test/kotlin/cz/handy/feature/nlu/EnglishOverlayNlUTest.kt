@@ -14,10 +14,10 @@ class EnglishOverlayNlUTest {
 
     @Test
     fun english_overlay_matches_when_cs_misses() {
-        assertEquals(NluResult.NoMatch, csOnly.blockingParse("what time is it"))
-        val out = chained.blockingParse("what time is it")
+        assertEquals(NluResult.NoMatch, csOnly.blockingParse("battery status"))
+        val out = chained.blockingParse("battery status")
         val m = assertIs<NluResult.Matched>(out)
-        assertEquals("WHAT_TIME", m.intent.intentId)
+        assertEquals("WHAT_BATTERY", m.intent.intentId)
     }
 
     @Test
