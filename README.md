@@ -28,22 +28,27 @@ If you are skimming for a hire: start at `core/audio` → `feature/asr` → `fea
 
 ## State of the demo
 
-Honest snapshot (September 2026), Galaxy S23 (`SM-S911B`):
+Honest snapshot (8 September 2026), Galaxy S23 (`SM-S911B`), sideloaded debug APK:
 
 **Works (demonstrated on device)**
 
 - Debug APK sideloads; the old `OrtGetApiBase` crash is gone (ONNX Runtime 1.25).
-- `EarService` keeps a microphone foreground notification.
-- Streaming Sherpa-ONNX ASR is alive.
-- End-to-end: spoken **“what time is it”** → NLU `WHAT_TIME` → English spoken answer, including with the screen off.
-- Local intent catalog also knows battery, date, flashlight, timer, unlock, plus Czech originals (call / SMS / maps). Hit-rate on noisy ASR is still the weak joint.
+- `EarService` keeps a **silent** microphone foreground notification (min-importance channel, no ping / vibrate spam when the UI phase changes).
+- Streaming ASR is alive. On this phone the primary recognizer is **Vosk Czech** when `vosk-model-small-cs` is present in the APK assets; Sherpa-ONNX remains in the tree as the zipformer path.
+- End-to-end Czech commands work for the expanded catalog (time, battery, date, flashlight / "světlo", plus call / SMS / maps originals). Exact-match NLU is still the weak joint on noisy ASR — phonetic near-misses like "zadní světlo" needed catalog and mode aliases.
+- Wake **phrases** from the live transcript (not a dedicated wake-word engine): "Wake up Handy", "Hey Handy", "Probuď se" can leave standby without waiting for a full endpoint silence.
+- TTS defaults to `cs-CZ`. On NLU `NoMatch` the assistant **speaks** `Nerozumím: <asr text>` instead of going silent. A safety timeout unlocks the mic if TTS never calls `onDone` (old sticky-deaf bug).
+- Closing the UI stops the ear on back / task-removed / `onDestroy` (confirm on a phone before you trust sticky-FGS forever).
+
+**In flight (local / open PRs — do not treat as merged truth)**
+
+- Fuzzy command match, speech-onset media duck, and navigate-place ASR language selection are under active PRs. They may be on the phone before they are on `main`.
 
 **Does not work yet (do not pretend)**
 
-- There is **no reliable “Handy” wake word** in this tree. Picovoice is optional and **not required** to read or compile the code. A Picovoice key is not in the repo. Gmail / university mail cannot register on their console anyway. OpenWakeWord assets (`hey_handy.onnx` and friends) are **not** checked in.
-- Closing the UI used to leave the mic up (sticky FGS). The public branch stops the ear on back / task-removed / `onDestroy`. Confirm on a phone before you trust it.
+- There is **no reliable dedicated "Handy" wake-word model** in this tree. Picovoice is optional and **not required** to read or compile. A Picovoice key is not in the repo. OpenWakeWord assets (`hey_handy.onnx` and friends) are **not** checked in.
 - Always-on listen still lives partly in the Activity `ViewModel`. The correct home is the ear service. That move is next, not done.
-- There is **no Czech ASR model** in git. The `cs_zipformer_small` slot is a filename from the product target. A public clone without weights will skip recognizer init.
+- There is **no Czech (or English) ASR model weight pack in git**. A public clone without local assets will skip recognizer init and will not speak.
 - This is not a Play listing, not a medical device, not a cloud assistant.
 
 ---
