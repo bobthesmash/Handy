@@ -70,6 +70,9 @@ class AsrSpellingNluEngineTest {
 
         val boston = assertIs<NluResult.Matched>(engine.blockingParse("navigate to boston"))
         assertEquals("boston", boston.intent.slots["place"])
+
+        val czechSpelling = assertIs<NluResult.Matched>(engine.blockingParse("navigate to karlův most"))
+        assertEquals("karlův most", czechSpelling.intent.slots["place"])
     }
 
     @Test

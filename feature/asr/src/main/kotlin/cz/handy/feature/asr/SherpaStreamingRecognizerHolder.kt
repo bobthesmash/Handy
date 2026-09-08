@@ -3,7 +3,7 @@ package cz.handy.feature.asr
 import android.content.Context
 
 /**
- * Lazy držák streamovacího ASR (Vosk CZ preferovaně, jinak Sherpa zipformer2).
+ * Lazy držák streamovacího **command** ASR (English Sherpa zipformer preferovaně).
  * [release] uvolní nativní paměť (idle teardown [F3-T05]).
  */
 class SherpaStreamingRecognizerHolder(
@@ -13,7 +13,7 @@ class SherpaStreamingRecognizerHolder(
 
     fun acquire(): StreamingAsrRecognizer? {
         recognizer?.let { return it }
-        val engine = createCzStreamingAsrRecognizer(appContext) ?: return null
+        val engine = createCommandStreamingAsrRecognizer(appContext) ?: return null
         recognizer = engine
         return engine
     }

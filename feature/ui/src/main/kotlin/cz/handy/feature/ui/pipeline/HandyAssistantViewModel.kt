@@ -8,6 +8,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import cz.handy.core.audio.EarAudioBridge
+import cz.handy.core.common.asr.PlaceAsrLanguage
+import cz.handy.core.common.asr.PlaceAsrLanguageSelector
 import cz.handy.core.common.audio.AsrHypothesisConfidence
 import cz.handy.core.common.audio.SpeechOnsetDuckPolicy
 import cz.handy.core.common.dialog.DialogManager
@@ -19,12 +21,18 @@ import cz.handy.feature.actions.executor.MvpIntentExecutor
 import cz.handy.feature.actions.media.MediaPlaybackHandover
 import cz.handy.feature.actions.media.SpeechOnsetMediaDucker
 import cz.handy.feature.actions.phone.DeviceContactFuzzyResolver
+import cz.handy.feature.asr.CoarseCountrySignalsReader
+import cz.handy.feature.asr.CzechPlaceRecognizerHolder
+import cz.handy.feature.asr.NavigatePlaceCascade
 import cz.handy.feature.asr.SherpaStreamingRecognizerHolder
+import cz.handy.feature.asr.decodeMono16StoredUtterance
 import cz.handy.feature.nlu.ChainedUtteranceParsers
 import cz.handy.feature.nlu.HandyNluCatalogs
 import cz.handy.feature.nlu.LlmPrimaryRuleFallbackNluEngine
-import cz.handy.feature.nlu.NoMatchUtteranceParser
+import cz.handy.feature.nlu.NavigatePlaceSlotBinder
+import cz.handy.feature.nlu.NavigatePrefixProbe
 import cz.handy.feature.nlu.NluResult
+import cz.handy.feature.nlu.NoMatchUtteranceParser
 import cz.handy.feature.nlu.ParsedIntent
 import cz.handy.feature.nlu.RuleBasedNluEngine
 import cz.handy.feature.nlu.UtteranceNluParser
@@ -51,7 +59,6 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -62,7 +69,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * `BuildConfig.DEBUG`): příkaz projde bez uloženého centroidu majitele a přeskakuje wake/verify fáze v dialogu.
  * **Release má vždy `false`.** Pokud je `false` a chybí profil, vstup před NLU se odmítne.
  */
-@Suppress("TooManyFunctions")
+@Suppress("TooManyFunctions", "LargeClass")
 class HandyAssistantViewModel(
     application: Application,
     private val simulateVoicePipelineBypass: Boolean,
@@ -84,10 +91,12 @@ class HandyAssistantViewModel(
     private val speech: SpeechSynthesizer = AndroidCzechSpeechSynthesizer(application)
     private val destructiveVoiceConfirm by lazy { DestructiveConfirmVoiceVerifier(application) }
     private val sherpaHolder = SherpaStreamingRecognizerHolder(application)
+    private val czechPlaceHolder = CzechPlaceRecognizerHolder(application)
+    private val countrySignalsReader = CoarseCountrySignalsReader(application)
     private val telemetry =
         HandyLocalTelemetry(application, LocalTelemetryPreferences(application))
 
-    /** Po [HEAVY_MODEL_IDLE_MINUTES] bez interakce uvolníme ONNX ECAPA session a Sherpa graf ([F3-T05]). */
+    /** Po pěti minutách bez interakce uvolníme ONNX ECAPA session a Sherpa graf ([F3-T05]). */
     private var heavyModelsIdleJob: Job? = null
 
     /** Čte [EarAudioBridge] a krmí [SherpaStreamingRecognizerHolder] po [noteWakeWordForHeavyModels]. */
@@ -95,9 +104,12 @@ class HandyAssistantViewModel(
 
     private var pcmConsumeMarker: Long = 0L
 
-    /** PCM tahu ze Sherpy před NLU — jen při `!simulateVoicePipelineBypass` a uloženém profilu. */
+    /** PCM of the current command utterance (speaker gate + NAVIGATE place cascade). */
     private val phraseTurnPcmChunks = ArrayList<ShortArray>()
-    private var capturePhraseTurnPcm = false
+
+    private var utteranceSampleCount: Int = 0
+    private var liveNavigatePrefixEndSample: Int? = null
+    private var liveNavigatePrefixWordCount: Int = 0
 
     private val micFeedAllowed = AtomicBoolean(false)
 
@@ -184,11 +196,19 @@ class HandyAssistantViewModel(
         text: String,
         minTokenProb: Float? = null,
         utterancePcmMono16Le: ShortArray? = null,
+        navigatePrefixEndSample: Int? = null,
+        navigatePrefixWordCount: Int = 0,
     ) {
         viewModelScope.launch {
             cancelHeavyModelsIdleRelease()
             try {
-                handleSimulatedTranscript(text.trim(), minTokenProb, utterancePcmMono16Le)
+                handleSimulatedTranscript(
+                    text.trim(),
+                    minTokenProb,
+                    utterancePcmMono16Le,
+                    navigatePrefixEndSample,
+                    navigatePrefixWordCount,
+                )
             } finally {
                 scheduleHeavyModelsIdleRelease()
             }
@@ -324,14 +344,14 @@ class HandyAssistantViewModel(
         stopMicFeed()
         destructiveVoiceConfirm.releaseOnnxResources()
         sherpaHolder.release()
+        czechPlaceHolder.release()
     }
 
     private fun stopMicFeed() {
         micFeedAllowed.set(false)
         micFeedJob?.cancel()
         micFeedJob = null
-        capturePhraseTurnPcm = false
-        phraseTurnPcmChunks.clear()
+        resetUtteranceCapture()
     }
 
     private fun startMicFeedToSherpa() {
@@ -341,10 +361,7 @@ class HandyAssistantViewModel(
             .onFailure {
                 return
             }
-        capturePhraseTurnPcm =
-            !simulateVoicePipelineBypass &&
-            embeddingStore.hasSpeakerProfile()
-        phraseTurnPcmChunks.clear()
+        resetUtteranceCapture()
         val ring = EarAudioBridge.ringBufferOrNull()
         pcmConsumeMarker = ring?.totalSamplesWritten() ?: 0L
         micFeedAllowed.set(true)
@@ -353,12 +370,12 @@ class HandyAssistantViewModel(
                 while (isActive && micFeedAllowed.get()) {
                     val r = sherpaHolder.peek() ?: sherpaHolder.acquire()
                     if (r == null) {
-                        delay(200)
+                        delay(MIC_FEED_WAIT_MS)
                         continue
                     }
                     val buffer = EarAudioBridge.ringBufferOrNull()
                     if (buffer == null) {
-                        delay(200)
+                        delay(MIC_FEED_WAIT_MS)
                         continue
                     }
                     val (chunk, newMark) = buffer.consumeMono16SinceTotalWritten(pcmConsumeMarker)
@@ -369,9 +386,11 @@ class HandyAssistantViewModel(
                             continue
                         }
                         appendPhraseTurnChunk(chunk)
+                        noteNavigatePrefix(tickText = null, chunkSize = chunk.size)
                         val tick = r.appendPcm16Mono(chunk)
                         if (tick.text.isNotBlank()) {
                             PipelineLatencyTracer.markFirstAsrPartial(true)
+                            noteNavigatePrefix(tickText = tick.text, chunkSize = 0)
                             mediaDucker.onSpeechOnset(
                                 text = tick.text,
                                 minTokenProb = tick.minTokenProb,
@@ -381,20 +400,22 @@ class HandyAssistantViewModel(
                         if (tick.endpoint) {
                             val heard = tick.text.trim()
                             if (heard.isNotBlank()) {
-                                val pcmSnapshot =
-                                    if (capturePhraseTurnPcm) {
-                                        drainPhraseTurnPcm()
-                                    } else {
-                                        null
-                                    }
-                                capturePhraseTurnPcm = false
+                                val drained = drainPhraseTurnPcm()
+                                val pcmSnapshot = drained.takeIf { it.isNotEmpty() }
+                                val prefixEnd = liveNavigatePrefixEndSample
+                                val prefixWords = liveNavigatePrefixWordCount
+                                resetUtteranceCapture()
                                 withContext(Dispatchers.Main.immediate) {
                                     submitRecognizedPhrase(
                                         heard,
                                         tick.minTokenProb,
                                         pcmSnapshot,
+                                        prefixEnd,
+                                        prefixWords,
                                     )
                                 }
+                            } else {
+                                resetUtteranceCapture()
                             }
                             runCatching { r.startUtterance() }
                         }
@@ -409,8 +430,30 @@ class HandyAssistantViewModel(
     }
 
     private fun appendPhraseTurnChunk(chunk: ShortArray) {
-        if (!capturePhraseTurnPcm || chunk.isEmpty()) return
+        if (chunk.isEmpty()) return
         phraseTurnPcmChunks.add(chunk.copyOf())
+    }
+
+    private fun resetUtteranceCapture() {
+        phraseTurnPcmChunks.clear()
+        utteranceSampleCount = 0
+        liveNavigatePrefixEndSample = null
+        liveNavigatePrefixWordCount = 0
+    }
+
+    private fun noteNavigatePrefix(
+        tickText: String?,
+        chunkSize: Int,
+    ) {
+        if (chunkSize > 0) {
+            utteranceSampleCount += chunkSize
+        }
+        if (tickText.isNullOrBlank() || liveNavigatePrefixEndSample != null) return
+        val hit = NavigatePrefixProbe.match(tickText) ?: return
+        liveNavigatePrefixWordCount = hit.wordCount
+        if (!hit.placeAlreadyStarted) {
+            liveNavigatePrefixEndSample = utteranceSampleCount
+        }
     }
 
     private fun drainPhraseTurnPcm(): ShortArray {
@@ -428,10 +471,13 @@ class HandyAssistantViewModel(
         return out
     }
 
+    @Suppress("CyclomaticComplexMethod", "ReturnCount")
     private suspend fun handleSimulatedTranscript(
         trimmed: String,
         minTokenProb: Float? = null,
         utterancePcmMono16Le: ShortArray? = null,
+        navigatePrefixEndSample: Int? = null,
+        navigatePrefixWordCount: Int = 0,
     ) {
         if (trimmed.isBlank()) {
             _toastLine.value = "Prázdný text."
@@ -491,15 +537,31 @@ class HandyAssistantViewModel(
 
         val pending = _pendingDestructive.value
         if (pending != null) {
-            val isConfirm = lowerTranscript == "yes" || lowerTranscript == "ok" || lowerTranscript == "okay" ||
-                lowerTranscript == "yep" || lowerTranscript == "yeah" || lowerTranscript == "sure" ||
-                lowerTranscript == "do it" || lowerTranscript == "ano" || lowerTranscript == "jo" ||
-                lowerTranscript.startsWith("yes ") || lowerTranscript.startsWith("ok ") ||
-                lowerTranscript.startsWith("ano ") || lowerTranscript.startsWith("jo ")
-            val isCancel = lowerTranscript == "no" || lowerTranscript == "cancel" || lowerTranscript == "abort" ||
-                lowerTranscript == "stop" || lowerTranscript == "ne" || lowerTranscript == "zruš" ||
-                lowerTranscript == "nechci" || lowerTranscript.startsWith("no ") ||
-                lowerTranscript.startsWith("cancel ") || lowerTranscript.startsWith("ne ")
+            val isConfirm =
+                lowerTranscript == "yes" ||
+                    lowerTranscript == "ok" ||
+                    lowerTranscript == "okay" ||
+                    lowerTranscript == "yep" ||
+                    lowerTranscript == "yeah" ||
+                    lowerTranscript == "sure" ||
+                    lowerTranscript == "do it" ||
+                    lowerTranscript == "ano" ||
+                    lowerTranscript == "jo" ||
+                    lowerTranscript.startsWith("yes ") ||
+                    lowerTranscript.startsWith("ok ") ||
+                    lowerTranscript.startsWith("ano ") ||
+                    lowerTranscript.startsWith("jo ")
+            val isCancel =
+                lowerTranscript == "no" ||
+                    lowerTranscript == "cancel" ||
+                    lowerTranscript == "abort" ||
+                    lowerTranscript == "stop" ||
+                    lowerTranscript == "ne" ||
+                    lowerTranscript == "zruš" ||
+                    lowerTranscript == "nechci" ||
+                    lowerTranscript.startsWith("no ") ||
+                    lowerTranscript.startsWith("cancel ") ||
+                    lowerTranscript.startsWith("ne ")
 
             if (isConfirm) {
                 _pendingDestructive.value = null
@@ -557,30 +619,41 @@ class HandyAssistantViewModel(
                 }
 
                 is NluResult.Matched -> {
+                    val intent =
+                        refineNavigatePlace(
+                            intent = out.intent,
+                            englishTranscript = trimmed,
+                            utterancePcm = utterancePcmMono16Le,
+                            prefixEndSample = navigatePrefixEndSample,
+                            prefixWordCount = navigatePrefixWordCount,
+                        )
                     mediaDucker.onCommandFinished(
                         SpeechOnsetDuckPolicy.shouldKeepPaused(
-                            out.intent.intentId,
-                            out.intent.slots,
+                            intent.intentId,
+                            intent.slots,
                         ),
                     )
-                    when (out.intent.intentId) {
+                    when (intent.intentId) {
                         "CANCEL" -> finishMetaAssistantLine("Action cancelled.")
                         "REPEAT" -> finishMetaAssistantLine(repeatLineOrFallback())
                         "CALL" -> {
-                            val rawContact = out.intent.slots["contact"].orEmpty()
+                            val rawContact = intent.slots["contact"].orEmpty()
                             val matched = DeviceContactFuzzyResolver.findClosestContact(getApplication(), rawContact)
                             val displayName = matched?.displayName ?: rawContact
-                            val updatedIntent = if (matched != null) {
-                                out.intent.copy(
-                                    slots = out.intent.slots + mapOf(
-                                        "contact" to matched.displayName,
-                                        "telUri" to matched.telUri.toString(),
-                                        "number" to matched.phoneNumber,
-                                    ),
-                                )
-                            } else {
-                                out.intent
-                            }
+                            val updatedIntent =
+                                if (matched != null) {
+                                    intent.copy(
+                                        slots =
+                                            intent.slots +
+                                                mapOf(
+                                                    "contact" to matched.displayName,
+                                                    "telUri" to matched.telUri.toString(),
+                                                    "number" to matched.phoneNumber,
+                                                ),
+                                    )
+                                } else {
+                                    intent
+                                }
                             _pendingDestructive.value = updatedIntent
                             dialog.onNluComplete(requiresConfirm = true)
                             val prompt = "Calling $displayName, ok?"
@@ -588,20 +661,23 @@ class HandyAssistantViewModel(
                             speakLine(prompt)
                         }
                         "SEND_SMS" -> {
-                            val rawContact = out.intent.slots["contact"].orEmpty()
+                            val rawContact = intent.slots["contact"].orEmpty()
                             val matched = DeviceContactFuzzyResolver.findClosestContact(getApplication(), rawContact)
                             val displayName = matched?.displayName ?: rawContact
-                            val updatedIntent = if (matched != null) {
-                                out.intent.copy(
-                                    slots = out.intent.slots + mapOf(
-                                        "contact" to matched.displayName,
-                                        "telUri" to matched.telUri.toString(),
-                                        "number" to matched.phoneNumber,
-                                    ),
-                                )
-                            } else {
-                                out.intent
-                            }
+                            val updatedIntent =
+                                if (matched != null) {
+                                    intent.copy(
+                                        slots =
+                                            intent.slots +
+                                                mapOf(
+                                                    "contact" to matched.displayName,
+                                                    "telUri" to matched.telUri.toString(),
+                                                    "number" to matched.phoneNumber,
+                                                ),
+                                    )
+                                } else {
+                                    intent
+                                }
                             _pendingDestructive.value = updatedIntent
                             dialog.onNluComplete(requiresConfirm = true)
                             val prompt = "Texting $displayName, ok?"
@@ -609,11 +685,11 @@ class HandyAssistantViewModel(
                             speakLine(prompt)
                         }
                         else -> {
-                            dialog.onNluComplete(out.intent.requiresConfirm)
-                            if (out.intent.requiresConfirm) {
-                                _pendingDestructive.value = out.intent
+                            dialog.onNluComplete(intent.requiresConfirm)
+                            if (intent.requiresConfirm) {
+                                _pendingDestructive.value = intent
                             } else {
-                                dispatchExec(out.intent, destructiveSmsConfirmed = true)
+                                dispatchExec(intent, destructiveSmsConfirmed = true)
                             }
                         }
                     }
@@ -733,6 +809,61 @@ class HandyAssistantViewModel(
         dialog.onAsrComplete()
     }
 
+    private suspend fun refineNavigatePlace(
+        intent: ParsedIntent,
+        englishTranscript: String,
+        utterancePcm: ShortArray?,
+        prefixEndSample: Int?,
+        prefixWordCount: Int,
+    ): ParsedIntent {
+        if (intent.intentId != "NAVIGATE") return intent
+        val signals = countrySignalsReader.read()
+        val choice = PlaceAsrLanguageSelector.select(signals)
+        Log.i(
+            PLACE_ASR_TAG,
+            "language=${choice.language} source=${choice.source} iso=${choice.countryIso} " +
+                "locPerm=${signals.locationPermissionGranted} locSkip=${signals.lastKnownUnavailableReason}",
+        )
+        val commandLang = sherpaHolder.peek()?.engineLanguage ?: PlaceAsrLanguage.ENGLISH
+        val prefixWords =
+            prefixWordCount.takeIf { it > 0 }
+                ?: NavigatePrefixProbe.match(englishTranscript)?.wordCount
+                ?: DEFAULT_NAVIGATE_PREFIX_WORDS
+        val englishWords =
+            englishTranscript
+                .trim()
+                .split(Regex("\\s+"))
+                .filter { it.isNotEmpty() }
+                .size
+        val czechPlace =
+            withContext(Dispatchers.Default) {
+                val rec =
+                    if (choice.language == PlaceAsrLanguage.CZECH) {
+                        czechPlaceHolder.acquire()
+                    } else {
+                        null
+                    }
+                NavigatePlaceCascade.czechPlaceOrNull(
+                    language = choice.language,
+                    commandEngineLanguage = commandLang,
+                    utterancePcm = utterancePcm,
+                    prefixEndSample = prefixEndSample,
+                    prefixWordCount = prefixWords,
+                    englishWordCount = englishWords,
+                    decode = { samples ->
+                        rec?.decodeMono16StoredUtterance(samples).orEmpty()
+                    },
+                )
+            }
+        if (czechPlace != null) {
+            Log.i(
+                PLACE_ASR_TAG,
+                "Czech place tail='$czechPlace' (english slot='${intent.slots["place"]}')",
+            )
+        }
+        return NavigatePlaceSlotBinder.bind(intent, choice.language, czechPlace)
+    }
+
     private fun dispatchExec(
         intent: ParsedIntent,
         destructiveSmsConfirmed: Boolean,
@@ -771,7 +902,6 @@ class HandyAssistantViewModel(
         speakLine(ack) { dialog.onTtsComplete() }
     }
 
-
     private fun looksLikeOwnTts(text: String): Boolean {
         val last = lastSpokenLine?.lowercase()?.trim().orEmpty()
         val heard = text.lowercase().trim()
@@ -782,7 +912,10 @@ class HandyAssistantViewModel(
         return false
     }
 
-    private fun speakLine(line: String, onDone: () -> Unit = {}) {
+    private fun speakLine(
+        line: String,
+        onDone: () -> Unit = {},
+    ) {
         ignoreMicForTts.set(true)
         lastSpokenLine = line
         speech.speak(line) {
@@ -791,6 +924,7 @@ class HandyAssistantViewModel(
                 pcmConsumeMarker = ring.totalSamplesWritten()
             }
             runCatching { sherpaHolder.peek()?.startUtterance() }
+            resetUtteranceCapture()
             ignoreMicForTts.set(false)
             onDone()
         }
@@ -809,7 +943,9 @@ class HandyAssistantViewModel(
 
     private companion object {
         private const val HEAVY_MODEL_TAG = "HandyHeavyModels"
-        private const val HEAVY_MODEL_IDLE_MINUTES = 5L
+        private const val PLACE_ASR_TAG = "HandyPlaceAsr"
         private const val MIC_FEED_POLL_MS = 25L
+        private const val MIC_FEED_WAIT_MS = 200L
+        private const val DEFAULT_NAVIGATE_PREFIX_WORDS = 2
     }
 }

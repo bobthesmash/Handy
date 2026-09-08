@@ -3,7 +3,9 @@ package cz.handy.feature.asr
 import com.k2fsa.sherpa.onnx.OnlineRecognizer
 import com.k2fsa.sherpa.onnx.OnlineStream
 import cz.handy.core.audio.MicCaptureConfig
+import cz.handy.core.common.asr.PlaceAsrLanguage
 import cz.handy.core.common.audio.AsrHypothesisConfidence
+
 /** Částečný výsledek jednoho vstupního PCM bloku. */
 data class StreamingSherpaTick(
     val text: String,
@@ -18,6 +20,9 @@ data class StreamingSherpaTick(
 class SherpaStreamingSpeechRecognizer(
     private val recognizer: OnlineRecognizer,
 ) : StreamingAsrRecognizer {
+    /** Bundled zipformer in this product is the English command model (assets comment). */
+    override val engineLanguage: PlaceAsrLanguage = PlaceAsrLanguage.ENGLISH
+
     private var stream: OnlineStream? = null
 
     override fun startUtterance() {
