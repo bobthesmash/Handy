@@ -1,6 +1,6 @@
 # Handy
 
-![Handy demo](docs/demo/handy-demo.mp4)
+[![Handy demo](docs/demo/handy-demo-thumb.jpg)](https://youtu.be/6nARsKNHUE4)
 
 On-device voice → command → flashlight / spoken answer, screen on then off (~25 s, one take).
 
@@ -127,7 +127,7 @@ Spoken phrases the current catalog accepts in English (exact-ish, after punctuat
 | Keystores / `google-services.json` | Signing and vendor secrets |
 | `sherpa.tar.bz2`, `_onnx_backup/`, unpacked zipformer dumps | Local cache from bringing ASR up. Not source |
 | Crash logs, `DEBUG_STATUS.md` | Device diaries, not the product |
-| Extra `*.mp4` takes | One cut lives in `docs/demo/handy-demo.mp4`; later takes stay local |
+| Extra `*.mp4` takes | Demo is [YouTube unlisted](https://youtu.be/6nARsKNHUE4); do not commit recuts |
 
 If a file is a secret or a 100 MB blob, it does not belong in a `git add -A`. The `.gitignore` in this branch is written for that.
 
