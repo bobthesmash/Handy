@@ -1,5 +1,9 @@
 # Handy
 
+![Handy demo](docs/demo/handy-demo.mp4)
+
+On-device voice → command → flashlight / spoken answer, screen on then off (~25 s, one take).
+
 **On-device voice assistant for Android.** Kotlin. The microphone stream never leaves the phone.
 
 This is a public work-in-progress of a full speech stack I run on a Galaxy S23: foreground mic service, streaming ASR, local NLU, speaker-check, TTS, and device actions. It is **not** a Play Store product and **will not speak after a bare clone** — model weights stay out of git on purpose.
@@ -123,6 +127,7 @@ Spoken phrases the current catalog accepts in English (exact-ish, after punctuat
 | Keystores / `google-services.json` | Signing and vendor secrets |
 | `sherpa.tar.bz2`, `_onnx_backup/`, unpacked zipformer dumps | Local cache from bringing ASR up. Not source |
 | Crash logs, `DEBUG_STATUS.md` | Device diaries, not the product |
+| Extra `*.mp4` takes | One cut lives in `docs/demo/handy-demo.mp4`; later takes stay local |
 
 If a file is a secret or a 100 MB blob, it does not belong in a `git add -A`. The `.gitignore` in this branch is written for that.
 
