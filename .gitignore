@@ -72,3 +72,7 @@ _onnx_backup/
 sherpa-onnx-streaming-zipformer*/
 DEBUG_STATUS.md
 script.py
+
+# Demo video: keep the one recruiter cut; ignore later takes
+*.mp4
+!docs/demo/handy-demo.mp4
