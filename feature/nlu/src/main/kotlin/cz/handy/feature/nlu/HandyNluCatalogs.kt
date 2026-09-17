@@ -169,6 +169,7 @@ object HandyNluCatalogs {
                 patterns(
                     "turn on flashlight{mode=on}",
                     "flashlight on{mode=on}",
+                    "flashlight{mode=on}",
                     "gimme a light{mode=on}",
                     "light on{mode=on}",
                     "torch on{mode=on}",
@@ -214,6 +215,8 @@ object HandyNluCatalogs {
                     "jaká je baterka",
                     "stav baterie",
                     "how's my battery",
+                    "what is my battery",
+                    "battery",
                     "battery level",
                     "how much juice",
                     "battery dying",
@@ -342,6 +345,10 @@ object HandyNluCatalogs {
             }
             intent("TORCH", requiresConfirm = false) {
                 phrase("{mode} flashlight")
+                patterns(
+                    "flashlight{mode=on}",
+                    "light off{mode=off}",
+                )
             }
             intent("WHAT_TIME", requiresConfirm = false) {
                 patterns(
@@ -357,8 +364,10 @@ object HandyNluCatalogs {
             }
             intent("WHAT_BATTERY", requiresConfirm = false) {
                 patterns(
+                    "battery",
                     "battery status",
                     "how much battery",
+                    "what is my battery",
                 )
             }
             intent("CANCEL", requiresConfirm = false) {

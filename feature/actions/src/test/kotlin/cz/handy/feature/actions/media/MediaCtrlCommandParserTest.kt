@@ -15,6 +15,7 @@ class MediaCtrlCommandParserTest {
 
     @Test
     fun mapsPauseAndPlay() {
+        assertEquals(MediaTransportCommand.Pause, MediaCtrlCommandParser.parse("pause"))
         assertEquals(MediaTransportCommand.Pause, MediaCtrlCommandParser.parse("pauza"))
         assertEquals(MediaTransportCommand.Pause, MediaCtrlCommandParser.parse("stop hudbu"))
         assertEquals(MediaTransportCommand.Play, MediaCtrlCommandParser.parse("pokračuj"))

@@ -20,4 +20,8 @@ internal data class PhraseMatcherSpec(
     val regex: Regex,
     val orderedSlotNames: List<String>,
     val staticSlots: Map<String, String> = emptyMap(),
+    /** Spoken command text with `{name=value}` static braces removed. */
+    val literalPhrase: String = "",
+    /** Literal words before the first capture slot (`call` in `call {contact}`). */
+    val leadingLiteral: String = "",
 )

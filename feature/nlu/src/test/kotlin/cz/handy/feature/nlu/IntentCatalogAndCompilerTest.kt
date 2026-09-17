@@ -126,7 +126,16 @@ class IntentCatalogAndCompilerTest {
         val spec = PhraseTemplateCompiler.compile("louder{operation=up}")
         assertEquals(emptyList(), spec.orderedSlotNames)
         assertEquals(mapOf("operation" to "up"), spec.staticSlots)
+        assertEquals("louder", spec.literalPhrase)
         assertNotNull(spec.regex.matchEntire("louder"))
         assertNull(spec.regex.matchEntire("louder up"))
+    }
+
+    @Test
+    fun compiler_call_leadingLiteral_does_not_include_contact() {
+        val spec = PhraseTemplateCompiler.compile("call {contact}")
+        assertEquals(listOf("contact"), spec.orderedSlotNames)
+        assertEquals("call", spec.leadingLiteral)
+        assertTrue("contact" in spec.literalPhrase)
     }
 }
