@@ -73,6 +73,6 @@ sherpa-onnx-streaming-zipformer*/
 DEBUG_STATUS.md
 script.py
 
-# Demo video: keep the one recruiter cut; ignore later takes
+# Demo video stays off git (YouTube unlisted + thumbnail only)
 *.mp4
-!docs/demo/handy-demo.mp4
+docs/demo/_frames/
