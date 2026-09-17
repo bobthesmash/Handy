@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import cz.handy.core.audio.EarAudioBridge
+import cz.handy.core.common.audio.AsrGateHotFile
 import cz.handy.core.common.audio.AsrHypothesisConfidence
 import cz.handy.core.common.dialog.DialogManager
 import cz.handy.core.common.dialog.DialogPhase
@@ -48,6 +49,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -78,6 +80,14 @@ class HandyAssistantViewModel(
     private val sherpaHolder = SherpaStreamingRecognizerHolder(application)
     private val telemetry =
         HandyLocalTelemetry(application, LocalTelemetryPreferences(application))
+
+    /** Hot-reloadable ASR confidence gate (`asr_gate.json`); see docs/superpowers/specs. */
+    private val asrGateHotFile =
+        AsrGateHotFile(
+            preferred =
+                application.getExternalFilesDir(null)?.let { File(it, AsrGateHotFile.FILE_NAME) },
+            fallback = File(application.filesDir, AsrGateHotFile.FILE_NAME),
+        )
 
     /** Po [HEAVY_MODEL_IDLE_MINUTES] bez interakce uvolníme ONNX ECAPA session a Sherpa graf ([F3-T05]). */
     private var heavyModelsIdleJob: Job? = null
@@ -426,9 +436,8 @@ class HandyAssistantViewModel(
         if (looksLikeOwnTts(trimmed)) {
             return
         }
-        if (AsrHypothesisConfidence.shouldAskRepeat(trimmed, minTokenProb)) {
-            telemetry.recordLowConfidenceAsrRetry()
-            // Do not TTS "opakuj" — always-on mic hears it as REPEAT forever.
+        if (shouldSilentDropLowAsrConfidence(trimmed, minTokenProb)) {
+            return
         }
         pendingTurnStartElapsed = SystemClock.elapsedRealtime()
 
@@ -750,6 +759,26 @@ class HandyAssistantViewModel(
         speakLine(ack) { dialog.onTtsComplete() }
     }
 
+    /**
+     * Confidence gate for spoken ASR. Typed console input passes `minTokenProb = null` and skips.
+     * Policy is re-read from [asrGateHotFile] so knobs can change without an APK rebuild.
+     */
+    private fun shouldSilentDropLowAsrConfidence(
+        trimmed: String,
+        minTokenProb: Float?,
+    ): Boolean {
+        Log.i(ASR_GATE_TAG, "FINAL ASR: '$trimmed' (minTokenProb=$minTokenProb)")
+        val policy = asrGateHotFile.current()
+        if (!AsrHypothesisConfidence.shouldAskRepeat(trimmed, minTokenProb, policy)) {
+            return false
+        }
+        telemetry.recordLowConfidenceAsrRetry()
+        Log.i(
+            ASR_GATE_TAG,
+            "drop: low ASR confidence '$trimmed' minProb=$minTokenProb policy=$policy",
+        )
+        return true
+    }
 
     private fun looksLikeOwnTts(text: String): Boolean {
         val last = lastSpokenLine?.lowercase()?.trim().orEmpty()
@@ -788,6 +817,7 @@ class HandyAssistantViewModel(
 
     private companion object {
         private const val HEAVY_MODEL_TAG = "HandyHeavyModels"
+        private const val ASR_GATE_TAG = "HandyAsrGate"
         private const val HEAVY_MODEL_IDLE_MINUTES = 5L
         private const val MIC_FEED_POLL_MS = 25L
     }
